@@ -1,9 +1,20 @@
 {{extend 'layout.html'}}
-<h1>Welcome to P2P: Poem 2 Poem</h1
-<body style="background-color:lightgrey;">
+{{block header}}
+    <header class="container-fluid background">
+      <div class="jumbotron text-center">
+        {{if response.title:}}
+        <h1>{{=response.title}}
+          <small>{{=response.subtitle or ''}}</small></h1>
+        {{pass}}
+      </div>
+    </header>
+{{end}}
+<h1>Welcome to P2P: Poem 2 Poem</h1>
+<body
+document.body.style.backgroundColor = "#000000";
+</body>
 <form enctype="multipart/form-data"
       action="{{=URL()}}" method="post">
-<input type=button onClick="location.href='login'" value='Login'>
-<input type=button onClick="location.href='Poem'" value='Poems'>
+<input type=button style="position: absolute; left: 700px; top: 250px; " onClick="location.href='login'" value='Login'>
+<input type=button style="position: absolute; left: 1100px; top: 250px; " onClick="location.href='Poem'" value='Poems'>
 </form>
-</body>

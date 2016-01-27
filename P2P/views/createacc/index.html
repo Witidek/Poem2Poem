@@ -1,0 +1,11 @@
+{{extend 'layout.html'}}
+<h1>
+    Create an Account
+</h1>
+<form enctype="multipart/form-data"
+      action="{{=URL()}}" method="post">
+Enter Username: <br>  <input type = "text" name="newname" /><br><br>
+Enter Password: <br> <input type = "password" password = "password"/><br><br>
+Confirm Password: <br><input type = "password" password = "password"/><br><br>
+
+<input type="submit" />
