@@ -1,12 +1,9 @@
 {{extend 'layout.html'}}
-<h1>Welcome to P2P: Poem 2 Poem</h1>
-<h2>Input form</h2>
-{{=BEAUTIFY(response._vars)}}
-
+<h1>Welcome to P2P: Poem 2 Poem</h1
+<body style="background-color:lightgrey;">
 <form enctype="multipart/form-data"
       action="{{=URL()}}" method="post">
-Your name:
-<input name="name" />
-<input type="submit" />
+<input type=button onClick="location.href='login'" value='Login'>
+<input type=button onClick="location.href='Poem'" value='Poems'>
 </form>
-<h2>Submitted variables</h2>
+</body>

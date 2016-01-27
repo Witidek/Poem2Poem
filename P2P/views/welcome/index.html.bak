@@ -1,12 +1,29 @@
 {{extend 'layout.html'}}
-<h1>Welcome to P2P: Poem 2 Poem</h1>
-<h2>Input form</h2>
+<h1>Welcome to P2P: Poem 2 Poem</h1
+<body style="background-color:lightgrey;">
 <form enctype="multipart/form-data"
       action="{{=URL()}}" method="post">
-Your name:
-<input name="name" />
-<input type="submit" />
+<input type=button onClick="location.href='login'" value='Login'>
 </form>
-<h2>Submitted variables</h2>
-
-{{=BEAUTIFY(response._vars)}}
+</body>
+>>> print CODE('print "hello"', language='python').xml()
+<table><tr valign="top"><td style="width:40px; text-align: right;"><pre style="
+        font-size: 11px;
+        font-family: Bitstream Vera Sans Mono,monospace;
+        background-color: transparent;
+            margin: 0;
+            padding: 5px;
+            border: none;
+        background-color: #E0E0E0;
+        color: #A0A0A0;
+    ">1.</pre></td><td><pre style="
+        font-size: 11px;
+        font-family: Bitstream Vera Sans Mono,monospace;
+        background-color: transparent;
+            margin: 0;
+            padding: 5px;
+            border: none;
+            overflow: auto;
+    "><span style="color:#185369; font-weight: bold">print </span>
+    <span style="color: #FF9966">"hello"</span></pre></td></tr>
+</table>

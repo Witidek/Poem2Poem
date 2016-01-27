@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+<h2>Input form</h2>
+<form enctype="multipart/form-data"
+      action="{{=URL()}}" method="post">
+Username: <input type = "text" name="name" /><br>
+
+Password: <input type = "password" password = "password"/><br>
+
+<input type="submit" />
+</form>
