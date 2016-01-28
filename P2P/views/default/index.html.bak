@@ -9,8 +9,9 @@
 
 <form enctype="multipart/form-data"
       action="{{=URL()}}" method="post">
-<input type=button style= "position:relative; left = 300px; top = 500 px" onClick="location.href='/P2P/default/user/login'" value='Login'>
-<input type=button  style = "position:relative;"  onClick="location.href='/P2P/default/poem'" value='Poems'>
+<input type=button style = "position:relative; left = 300px; top = 500 px" onClick="location.href='/P2P/default/user/login'" value ='Login'>
+<input type=button style = "position:relative;"  onClick="location.href='/P2P/default/browse'" value ='Browse Poems'>
+<input type=button style = "position:relative;"  onClick="location.href='/P2P/protochat'" value ='Chat'>
 
 </a>
 
