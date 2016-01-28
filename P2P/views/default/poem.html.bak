@@ -1,0 +1,5 @@
+{{extend 'layout.html'}}
+
+<h2>{{=post.title}}</h2>
+</br>
+{{=MARKMIN(post.body)}}

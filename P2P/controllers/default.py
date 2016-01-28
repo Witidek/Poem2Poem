@@ -38,23 +38,15 @@ def user():
     """
     return dict(form=auth())
 
+def browse():
+    rows = db(db.poem).select()
+    return locals()
 
-@cache.action()
-def download():
-    """
-    allows downloading of uploaded files
-    http://..../[app]/default/download/[filename]
-    """
-    return response.download(request, db)
+def poem():
+    post = db.poem(request.args(0,cast=int))
+    return locals()
 
-
-def call():
-    """
-    exposes services. for example:
-    http://..../[app]/default/call/jsonrpc
-    decorate with @services.jsonrpc the functions to expose
-    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
-    """
-    return service()
-
-
+@auth.requires_login()
+def create():
+    form = SQLFORM(db.poem).process()
+    return locals()
