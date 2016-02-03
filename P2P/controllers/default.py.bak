@@ -43,28 +43,18 @@ def browse():
     return locals()
 
 def poem():
-    post = db.poem(request.args(0,cast=int))
+    poem = db.poem(request.args(0,cast=int))
     return locals()
 
 @auth.requires_login()
 def create():
     form = SQLFORM(db.poem).process()
-    return dict(form=form)
+    if form.accepted: redirect(URL('browse'))
+    return locals()
 
-@cache.action()
-def download():
-    """
-    allows downloading of uploaded files
-    http://..../[app]/default/download/[filename]
-    """
-    return response.download(request, db)
-
-
-def call():
-    """
-    exposes services. for example:
-    http://..../[app]/default/call/jsonrpc
-    decorate with @services.jsonrpc the functions to expose
-    supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
-    """
-    return service()
+@auth.requires_login()
+def edit():
+    record = db.poem(request.args(0,cast=int))
+    form = SQLFORM(db.poem, record, fields=['title','body']).process()
+    if form.accepted: redirect(URL('browse'))
+    return locals()

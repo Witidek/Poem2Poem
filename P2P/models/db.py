@@ -90,8 +90,18 @@ auth.settings.reset_password_requires_verification = True
 
 db.define_table('poem',
                 Field('title', 'string', requires=IS_NOT_EMPTY()),
-                Field('author', 'string'),
-                Field('body', 'text'))
+                Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
+                Field('body', 'text'),
+                Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%d-%m-%Y'))))
+db.poem.id.readable = False
+
+db.define_table('newline',
+                Field('poem_id', 'reference poem'),
+                Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
+                Field('line_number', 'integer', writable=False),
+                Field('line', 'string'),
+                Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%d-%m-%Y'))))
+
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)

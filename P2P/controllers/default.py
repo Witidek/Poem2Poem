@@ -9,15 +9,7 @@
 #########################################################################
 
 def index():
-    """
-    example action using the internationalization operator T and flash
-    rendered by views/default/index.html or views/generic.html
-
-    if you need a simple wiki simply replace the two lines below with:
-    return auth.wiki()
-    """
-    response.flash = T("Hello World")
-    return dict(message=T('Welcome to web2py!'))
+    return locals()
 
 
 def user():
@@ -43,10 +35,18 @@ def browse():
     return locals()
 
 def poem():
-    post = db.poem(request.args(0,cast=int))
+    poem = db.poem(request.args(0,cast=int))
     return locals()
 
 @auth.requires_login()
 def create():
     form = SQLFORM(db.poem).process()
+    if form.accepted: redirect(URL('browse'))
+    return locals()
+
+@auth.requires_login()
+def edit():
+    poem = db.poem(request.args(0,cast=int))
+    form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
+    if form.accepted: redirect(URL('browse'))
     return locals()

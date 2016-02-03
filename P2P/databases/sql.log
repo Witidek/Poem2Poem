@@ -376,3 +376,159 @@ success!
 success!
 success!
 success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+timestamp: 2016-02-03T01:26:31.087000
+ALTER TABLE poem ADD date_posted TIMESTAMP;
+success!
+success!
+success!
+success!
+success!
+timestamp: 2016-02-03T01:28:33.258000
+CREATE TABLE newline(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poem_id INTEGER REFERENCES poem (id) ON DELETE CASCADE  ,
+    author INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  ,
+    line_number INTEGER,
+    line CHAR(512),
+    date_posted TIMESTAMP
+);
+success!
+success!
+success!
+success!
+success!
+DROP TABLE poem;
+success!
+timestamp: 2016-02-03T01:31:22.113000
+CREATE TABLE poem(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title CHAR(512),
+    author INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  ,
+    body TEXT,
+    date_posted TIMESTAMP
+);
+success!

@@ -1,7 +1,12 @@
 {{extend 'layout.html'}}
 
-<h2>{{=post.title}}</h2>
+<h2>{{=poem.title}}</h2>
 </br>
 <pre>
-{{=post.body}}
+{{=poem.body}}
 </pre>
+Author: {{=db.auth_user(poem.author).username}}
+</br>
+{{if auth.user_id == poem.author:}}
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>
+{{pass}}

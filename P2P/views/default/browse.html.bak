@@ -4,12 +4,14 @@
 <table class="table">
     <tr>
         <th>Title</th>
-        <th>Poem</th>
+        <th>Author</th>
+        <th>First Line</th>
     </tr>
     {{for row in rows:}}
     <tr>
         <td><a href="{{=URL('poem',args=row.id)}}">{{=row.title}}</td>
-        <td>{{=row.body}}</td>
+        <td>{{=auth.user(row.author).user_name}}</td>
+        <td>{{=row.body.split('\n')[0]}}</td>
     </tr>
     {{pass}}
 </table>
