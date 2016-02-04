@@ -35,7 +35,10 @@ def browse():
     return locals()
 
 def poem():
+    if not request.args(0): redirect(URL('browse'))
     poem = db.poem(request.args(0,cast=int))
+    rows = db(db.newline.poem_id == poem.id).select()
+    contributors = db().select(db.newline.author, groupby=db.newline.author)
     return locals()
 
 @auth.requires_login()
@@ -49,4 +52,14 @@ def edit():
     poem = db.poem(request.args(0,cast=int))
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     if form.accepted: redirect(URL('browse'))
+    return locals()
+
+@auth.requires_login()
+def add():
+    if not request.args(0): redirect(URL('browse'))
+    poem = db.poem(request.args(0,cast=int))
+    form = SQLFORM(db.newline)
+    form.vars.poem_id = poem.id
+    form.process()
+    if form.accepted: redirect(URL('poem', args=poem.id))
     return locals()

@@ -9,15 +9,7 @@
 #########################################################################
 
 def index():
-    """
-    example action using the internationalization operator T and flash
-    rendered by views/default/index.html or views/generic.html
-
-    if you need a simple wiki simply replace the two lines below with:
-    return auth.wiki()
-    """
-    response.flash = T("Hello World")
-    return dict(message=T('Welcome to web2py!'))
+    return locals()
 
 
 def user():
@@ -43,7 +35,10 @@ def browse():
     return locals()
 
 def poem():
+    if not request.args(0): redirect(URL('browse'))
     poem = db.poem(request.args(0,cast=int))
+    rows = db(db.newline.poem_id == poem.id).select()
+    contributors = db().select(db.newline.author, groupby=db.newline.author)
     return locals()
 
 @auth.requires_login()
@@ -54,7 +49,17 @@ def create():
 
 @auth.requires_login()
 def edit():
-    record = db.poem(request.args(0,cast=int))
-    form = SQLFORM(db.poem, record, fields=['title','body']).process()
+    poem = db.poem(request.args(0,cast=int))
+    form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     if form.accepted: redirect(URL('browse'))
+    return locals()
+
+@auth.requires_login()
+def add():
+    if not request.args(0): redirect(URL('browse'))
+    poem = db.poem(request.args(0,cast=int))
+    form = SQLFORM(db.newline)
+    form.vars.poem_id = poem.id
+    form.process()
+    if form.accepted: redirect(URL('poem', args=poem.id))
     return locals()

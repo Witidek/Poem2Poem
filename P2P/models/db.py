@@ -96,9 +96,9 @@ db.define_table('poem',
 db.poem.id.readable = False
 
 db.define_table('newline',
-                Field('poem_id', 'reference poem'),
+                Field('poem_id', 'reference poem', readable=False, writable=False),
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
-                Field('line_number', 'integer', writable=False),
+                Field('line_number', 'integer', readable=False, writable=False),
                 Field('line', 'string'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%d-%m-%Y'))))
 

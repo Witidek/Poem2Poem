@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+<h2>{{=poem.title}}</h2>
+</br>
+<pre>
+{{=poem.body}}
+</pre>
+Author: {{=db.auth_user(poem.author).username}}
+</br>
+<h2>Add a line to this poem</h2>
+{{=form}}

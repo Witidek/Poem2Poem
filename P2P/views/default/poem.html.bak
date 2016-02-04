@@ -3,8 +3,14 @@
 <h2>{{=poem.title}}</h2>
 </br>
 <pre>
-{{=poem.body}}
+{{=poem.body}} {{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}
 </pre>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
+Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user(person.author).username}} {{pass}}{{pass}}
+</br>
+</br>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
+{{if auth.user_id == poem.author:}}
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>
+{{pass}}
