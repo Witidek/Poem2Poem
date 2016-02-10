@@ -1,0 +1,41 @@
+{{extend 'layout.html'}}
+<h1>
+Username: {{=user.username}}
+</h1>
+<table class = "table">
+    <tr>
+        <th>Poems Owned</th>
+        <th>Date Posted</th>
+        <th>Permissions</th>
+    </tr>
+    <tr>
+        {{for row in db(db.poem.author == user.id).select() :}}
+            {{str = ''}}
+            <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
+            <td> {{=row.date_posted}}</td>
+             {{for permission in db(db.permission).select():}}
+                {{if permission.poem_id == row.id:}}
+                    {{str = str + '  ' + permission.user_id.username}}
+                {{pass}}
+             {{pass}}
+            <td>{{=str}}</td>
+    </tr>
+
+{{pass}}
+</table>
+<br>
+<br>
+<table class = "table">
+    <tr>
+        <th>Poems Contributed </th>
+        <th>Date Posted</th>
+    </tr>
+        {{for row in db(db.newline.author == user.id).select() :}}
+            {{for rows in db(row.poem_id == db.poem.id).select():}}
+        <tr>
+            <td><a href="{{=URL('poem',args=rows.id)}}"> {{=rows.title}}</td>
+            <td> {{=rows.date_posted}}</td>
+        </tr>
+            {{pass}}
+        {{pass}}
+</table>

@@ -1,3 +1,13 @@
 {{extend 'layout.html'}}
-<h1>This is the default/edit.html template</h1>
-{{=BEAUTIFY(response._vars)}}
+<h2>
+    Edit your poem
+</h2>
+{{=form}}
+
+{{if poem.permission == 'Private'}}
+<h2>
+    Added Permissions
+</h2>
+
+{{=forms}}
+{{pass}}

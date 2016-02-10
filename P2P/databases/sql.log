@@ -532,3 +532,34 @@ CREATE TABLE poem(
     date_posted TIMESTAMP
 );
 success!
+timestamp: 2016-02-09T23:39:12.117000
+ALTER TABLE poem ADD permission CHAR(1);
+success!
+timestamp: 2016-02-09T23:39:12.245000
+CREATE TABLE permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poem_id INTEGER REFERENCES poem (id) ON DELETE CASCADE  ,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  
+);
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+DROP TABLE permission;
+success!
+timestamp: 2016-02-10T04:04:15.378000
+CREATE TABLE permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poem_id INTEGER REFERENCES poem (id) ON DELETE CASCADE  ,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  
+);
+success!

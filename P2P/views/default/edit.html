@@ -3,3 +3,11 @@
     Edit your poem
 </h2>
 {{=form}}
+
+{{if poem.permission == 'Private':}}
+<h2>
+    Added Permissions
+</h2>
+
+{{=forms}}
+{{pass}}

@@ -44,7 +44,9 @@ def poem():
 @auth.requires_login()
 def create():
     form = SQLFORM(db.poem).process()
-    if form.accepted: redirect(URL('browse'))
+    if form.accepted:
+        if form.vars.permission == 'Private': db.permission.insert(user_id = auth.user , poem_id = form.vars.id)
+        redirect(URL('browse'))
     return locals()
 
 @auth.requires_login()
@@ -52,6 +54,21 @@ def edit():
     poem = db.poem(request.args(0,cast=int))
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     if form.accepted: redirect(URL('browse'))
+    forms = FORM('Username: ',
+              INPUT(_name='username'),
+              INPUT(_type='submit'))
+    if forms.accepts(request,session):
+        added = False
+        for users in db(db.auth_user).select():
+            if(users.username == forms.vars.username):
+                for permission in db(db.permission).select():
+                    if(permission.user_id == users.id and permission.poem_id == poem.id):
+                        response.flash = 'Already Added'
+                    else:
+                        added = True
+                if(added == True):
+                    db.permission.insert(user_id = users.id , poem_id = poem.id)
+                    response.flash = 'Added'
     return locals()
 
 @auth.requires_login()
@@ -62,4 +79,10 @@ def add():
     form.vars.poem_id = poem.id
     form.process()
     if form.accepted: redirect(URL('poem', args=poem.id))
+    return locals()
+
+@auth.requires_login()
+def profile():
+    user = auth.user
+    poem = db.poem
     return locals()

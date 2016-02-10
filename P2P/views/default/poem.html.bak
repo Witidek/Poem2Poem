@@ -1,6 +1,7 @@
 {{extend 'layout.html'}}
 
-<h2>{{=poem.title}}</h2>
+<h2>{{=poem.title}}
+    {{=poem.id}}</h2>
 </br>
 <pre>
 {{=poem.body}} {{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}
