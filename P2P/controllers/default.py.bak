@@ -77,6 +77,7 @@ def add():
     poem = db.poem(request.args(0,cast=int))
     form = SQLFORM(db.newline)
     form.vars.poem_id = poem.id
+    test = form.vars.line
     form.process()
     if form.accepted: redirect(URL('poem', args=poem.id))
     return locals()
