@@ -25,13 +25,25 @@
             <h2>Add a line to this poem</h2>
             {{=form}}
 {{pass}}
+{{ split1 = len(poem.body.splitlines())}}
+{{ split2 = len(poem.body.splitlines()[split1-1].split(' '))}}
+{{ split3 = poem.body.splitlines()[split1-1].split(' ')[split2-1]}}
 
-<form action="javascript:RhymeBrainSubmit()">
-    <input type=text id="RhymeBrainInput">
+
+
+
+<form action="javascript:RhymeBrainSubmit()" id="RhymeBrainForm">
+    <input type=text id="RhymeBrainInput" value = {{=split3}}>
     <input type=submit value="Rhyme">
 </form>
+
+
 <script type="text/javascript">
-    var RhymeBrainMaxResults = 50;
+    window.onload = function(){
+    document.forms['RhymeBrainForm'].submit()
+
+}
+   var RhymeBrainMaxResults = 50;
 </script>
 <script type="text/javascript" src="http://rhymebrain.com/external.js"></script>
 Rhyme results are provided by <a href="http://rhymebrain.com">RhymeBrain.com</a>

@@ -75,6 +75,7 @@ def edit():
 def add():
     if not request.args(0): redirect(URL('browse'))
     poem = db.poem(request.args(0,cast=int))
+    rows = db(db.newline.poem_id == poem.id).select()
     form = SQLFORM(db.newline)
     form.vars.poem_id = poem.id
     ##test = form.vars.line
