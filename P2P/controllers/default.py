@@ -82,12 +82,11 @@ def edit():
 def add():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
-    #Save first argument in a local variable
-    poem_id = request.args(0,cast=int)
-
-    poem = db.poem(poem_id)
+    poem = db.poem(request.args(0,cast=int))
+    rows = db(db.newline.poem_id == poem.id).select()
     form = SQLFORM(db.newline)
     form.vars.poem_id = poem.id
+    ##test = form.vars.line
     form.process()
     if form.accepted: redirect(URL('poem', args=poem.id))
     return locals()
