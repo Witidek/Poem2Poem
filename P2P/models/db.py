@@ -93,7 +93,9 @@ db.define_table('poem',
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
                 Field('body', 'text'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%d-%m-%Y'))),
-                Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ))
+                Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ),
+                Field('who_can_edit', requires = IS_IN_SET(['Anyone','Friends','Only Me']))
+               )
 db.poem.id.readable = False
 
 db.define_table('newline',

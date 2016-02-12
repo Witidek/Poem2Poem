@@ -563,3 +563,16 @@ CREATE TABLE permission(
     user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  
 );
 success!
+timestamp: 2016-02-12T12:18:51.710697
+ALTER TABLE poem ADD writability CHAR(512);
+success!
+timestamp: 2016-02-12T12:19:44.460105
+ALTER TABLE poem ADD who_can_edit CHAR(512);
+success!
+success!
+success!
+success!
+success!
+success!
+success!
+success!
