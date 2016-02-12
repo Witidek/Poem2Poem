@@ -2,8 +2,15 @@
 <h2>
     Edit your poem
 </h2>
+<pre>
+{{=poem.body}} {{if lines:}}{{for line in lines:}}</br>{{=line.line}}{{pass}}{{pass}}
+</pre>
+</br>
 {{=form}}
-
+</br>
+{{for line in lines_form:}}
+    {{=line}} {{line.deleted = True}}
+{{pass}}
 {{if poem.permission == 'Private':}}
 <h2>
     Added Permissions
