@@ -25,15 +25,17 @@
             <h2>Add a line to this poem</h2>
             {{=form}}
 {{pass}}
-{{ split1 = len(poem.body.splitlines())}}
-{{ split2  = len(poem.body.splitlines()[split1-1].split(' '))}}
-{{ split3 = poem.body.splitlines()[split1-1].split(' ')[split2-1]}}
+{{ rhyme_word = "" }}
+
+    {{ line_list_length = len(poem.body.splitlines())}}
+    {{ line_length = len(poem.body.splitlines()[line_list_length-1].split(' '))}}
+    {{ rhyme_word = poem.body.splitlines()[line_list-1].split(' ')[line_length-1]}}
 
 
 
 
 <form action="javascript:RhymeBrainSubmit()" id="RhymeBrainForm">
-    <input type=text id="RhymeBrainInput" value = {{=split3}}>
+    <input type=text id="RhymeBrainInput" value = {{=rhyme_word}}>
     <input type=submit value="Rhyme">
 </form>
 

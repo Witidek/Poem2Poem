@@ -84,11 +84,17 @@ def add():
     if not request.args(0): redirect(URL('browse'))
     poem = db.poem(request.args(0,cast=int))
     rows = db(db.newline.poem_id == poem.id).select()
+    line_count = poem.line_count
+    if poem.line_count:
+        line_count = line_count + 1
     form = SQLFORM(db.newline)
     form.vars.poem_id = poem.id
+    form.vars.line_number = line_count
     ##test = form.vars.line
     form.process()
-    if form.accepted: redirect(URL('poem', args=poem.id))
+    if form.accepted:
+        poem.update_record(line_count=line_count)
+        redirect(URL('poem', args=poem.id))
     return locals()
 
 @auth.requires_login()

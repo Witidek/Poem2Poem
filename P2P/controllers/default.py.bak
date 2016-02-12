@@ -58,7 +58,8 @@ def edit():
     lines = db(db.newline.poem_id == poem_id).select()
     lines_form = []
     for line in lines:
-        lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, readonly=False, deletable=True, submit_button = 'Delete', fields=['line'], buttons=['submit']).process())
+        lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
+    #
     if form.accepted: redirect(URL('browse'))
     forms = FORM('Username: ',
               INPUT(_name='username'),
@@ -81,18 +82,18 @@ def edit():
 def add():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
-    #Save first argument in a local variable
-    poem_id = request.args(0,cast=int)
-    #if db(poem_id, 
-    #if not db(db.permission.poem_id==poem_id, db.permission.user_id==auth.user.id).select():
-    #    session.flash = 'You do not have permission to add to this poem!'
-    #    redirect(URL('poem', args=[poem_id]))
-    poem = db.poem(poem_id)
+    poem = db.poem(request.args(0,cast=int))
+    rows = db(db.newline.poem_id == poem.id).select()
+    line_count = poem.line_count
+    line_count = line_count + 1
     form = SQLFORM(db.newline)
     form.vars.poem_id = poem.id
+    form.vars.line_number = line_count
     ##test = form.vars.line
     form.process()
-    if form.accepted: redirect(URL('poem', args=poem.id))
+    if form.accepted:
+        poem.update_record(line_count=line_count)
+        redirect(URL('poem', args=poem.id))
     return locals()
 
 @auth.requires_login()

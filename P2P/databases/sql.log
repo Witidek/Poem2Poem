@@ -563,3 +563,6 @@ CREATE TABLE permission(
     user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  
 );
 success!
+timestamp: 2016-02-11T20:32:08.630000
+ALTER TABLE poem ADD line_count INTEGER;
+success!
