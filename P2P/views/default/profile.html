@@ -9,7 +9,7 @@ Username: {{=user.username}}
         <th>Permissions</th>
     </tr>
     <tr>
-        {{for row in db(db.poem.author == user.id).select() :}}
+        {{for row in poems_owned:}}
             {{str = ''}}
             <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
             <td> {{=row.date_posted}}</td>
@@ -19,9 +19,9 @@ Username: {{=user.username}}
                 {{pass}}
              {{pass}}
             <td>{{=str}}</td>
+        {{pass}}
     </tr>
 
-{{pass}}
 </table>
 <br>
 <br>
@@ -30,12 +30,10 @@ Username: {{=user.username}}
         <th>Poems Contributed </th>
         <th>Date Posted</th>
     </tr>
-        {{for row in db(db.newline.author == user.id).select() :}}
-            {{for rows in db(row.poem_id == db.poem.id).select():}}
+        {{for row in poems_contributed:}}
         <tr>
-            <td><a href="{{=URL('poem',args=rows.id)}}"> {{=rows.title}}</td>
-            <td> {{=rows.date_posted}}</td>
+            <td><a href="{{=URL('poem',args=row.poem.id)}}"> {{=row.poem.title}}</td>
+            <td> {{=row.poem.date_posted}}</td>
         </tr>
-            {{pass}}
         {{pass}}
 </table>

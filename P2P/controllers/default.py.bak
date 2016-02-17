@@ -13,21 +13,6 @@ def index():
 
 
 def user():
-    """
-    exposes:
-    http://..../[app]/default/user/login
-    http://..../[app]/default/user/logout
-    http://..../[app]/default/user/register
-    http://..../[app]/default/user/profile
-    http://..../[app]/default/user/retrieve_password
-    http://..../[app]/default/user/change_password
-    http://..../[app]/default/user/bulk_register
-    use @auth.requires_login()
-        @auth.requires_membership('group name')
-        @auth.requires_permission('read','table name',record_id)
-    to decorate functions that need access control
-    also notice there is http://..../[app]/appadmin/manage/auth to allow administrator to manage users
-    """
     return dict(form=auth())
 
 def browse():
@@ -35,25 +20,41 @@ def browse():
     return locals()
 
 def poem():
+    # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
+
+    # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
     rows = db(db.newline.poem_id == poem.id).select()
     contributors = db(db.newline.poem_id == poem.id).select(db.newline.author, groupby=db.newline.author)
+
     return locals()
 
 @auth.requires_login()
 def create():
     form = SQLFORM(db.poem).process()
     if form.accepted:
-        if form.vars.permission == 'Private': db.permission.insert(user_id = auth.user , poem_id = form.vars.id)
+        # Create a new insert into permission table if poem was created Private (give owner permission)
+        if form.vars.permission == 'Private':
+            db.permission.insert(user_id = auth.user, poem_id = form.vars.id)
         redirect(URL('browse'))
     return locals()
 
 @auth.requires_login()
 def edit():
+    # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
+
+    # Load poem using the URL argument as poem id
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
+
+    # Redirect if current user is not owner of poem
+    if poem.author != auth.user:
+        session.flash = 'You are not the owner of this poem and cannot edit it'
+        redirect(URL('poem',args=poem.id))
+
+    # Create SQLFORM
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     lines = db(db.newline.poem_id == poem_id).select()
     lines_form = []
@@ -82,14 +83,32 @@ def edit():
 def add():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
+
+    # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
     rows = db(db.newline.poem_id == poem.id).select()
-    line_count = poem.line_count
-    line_count = line_count + 1
-    form = SQLFORM(db.newline)
+
+    # Check if poem is private and if current user has proper permissions, redirect if no permission
+    if poem.permission == 'Private':
+        if not db(db.permission.poem_id == poem.id, db.permission.user_id == auth.user).select():
+            session.flash = 'You do not have permission to add to this poem'
+            redirect(URL('poem', args=poem.id))
+
+    # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+    rhyme_word = ''
+    if poem.line_count == 2:
+        rhyme_word = poem.body.splitlines()[0].split(' ')[-1]
+    elif poem.line_count == 3:
+        rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
+    else:
+        rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count-1).select().first()
+        rhyme_word = rhyme_line.line.split(' ')[-1]
+
+    # Create SQLFORM for the user to add a single line as a String
+    form = SQLFORM(db.newline, fields=['line', 'date_posted'])
     form.vars.poem_id = poem.id
-    form.vars.line_number = line_count
-    ##test = form.vars.line
+    form.vars.line_number = poem.line_count
+
     form.process()
     if form.accepted:
         poem.update_record(line_count=line_count)
@@ -100,4 +119,6 @@ def add():
 def profile():
     user = auth.user
     poem = db.poem
+    poems_owned = db(db.poem.author == user.id).select()
+    poems_contributed = db(db.newline.author == user.id, db.poem.id == db.newline.poem_id).select(groupby=db.poem.id)
     return locals()

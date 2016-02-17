@@ -3,8 +3,7 @@
 <h2>{{=poem.title}}</h2>
 </br>
 <pre>
-{{=poem.body}} {{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}
-</pre>
+{{=poem.body}} {{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}</pre>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user(person.author).username}} {{pass}}{{pass}}

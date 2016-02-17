@@ -1,37 +1,12 @@
 {{extend 'layout.html'}}
-{{ if poem.permission == 'Private':}}
-    {{allow = False}}
-    {{for permission in db(db.permission).select():}}
-        {{if permission.poem_id == poem.id and permission.user_id.username == auth.user.username:}}
-            <h2>{{=poem.title}}</h2>
-            </br>
-            <pre>{{=poem.body}}</pre>
-            Author: {{=db.auth_user(poem.author).username}}
-            </br>
-            <h2>Add a line to this poem</h2>
-            {{=form}}
-            {{allow = True}}
-    {{pass}}
-    {{pass}}
 
-    {{if allow == False:}} <h2>Access Denied</h2> {{pass}}
-
-{{else:}}
 <h2>{{=poem.title}}</h2>
-            </br>
-            <pre> {{=poem.body}} </pre>
-            Author: {{=db.auth_user(poem.author).username}}
-            </br>
-            <h2>Add a line to this poem</h2>
-            {{=form}}
-{{pass}}
-{{ rhyme_word = "" }}
-
-    {{ line_list_length = len(poem.body.splitlines())}}
-    {{ line_length = len(poem.body.splitlines()[line_list_length-1].split(' '))}}
-    {{ rhyme_word = poem.body.splitlines()[line_list_length-1].split(' ')[line_length-1]}}
-
-
+</br>
+<pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}</pre>
+Author: {{=db.auth_user(poem.author).username}}
+</br>
+<h2>Add a line to this poem</h2>
+{{=form}}
 
 
 <form action="javascript:RhymeBrainSubmit()" id="RhymeBrainForm">
