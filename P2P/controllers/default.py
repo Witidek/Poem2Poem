@@ -8,6 +8,7 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
+
 def index():
     return locals()
 
@@ -17,6 +18,37 @@ def user():
 
 def browse():
     rows = db(db.poem).select()
+    return locals()
+
+def search():
+    rows = db(db.poem).select()
+    searchKey = ""
+    searchType = 'Poems'
+    form = FORM('Search: ',
+              INPUT(_name='search'),
+              '    Search By:  ',
+              INPUT(_type ='radio', _name = 'searchType', _value = 'Poems', _checked="checked"), '  Poems ',
+              INPUT(_type ='radio', _name = 'searchType', _value = 'Authors'),'  Authors  ',
+              INPUT(_type='submit'))
+    if form.accepts(request,session):
+        searchKey = form.vars.search
+        searchType = form.vars.searchType
+
+    return locals()
+
+def test():
+    import urllib
+    import urllib2
+    from gluon.contrib import simplejson
+    url = 'http://rhymebrain.com/talk'
+    data = {}
+    data['function'] = 'getRhymes'
+    data['word'] = 'fire'
+    url_values = urllib.urlencode(data)
+    full_url = url + '?' + url_values
+    data = urllib2.urlopen(full_url)
+    result = data.read()
+    parsed_json = simplejson.loads(result)
     return locals()
 
 def poem():
@@ -81,6 +113,9 @@ def edit():
 
 @auth.requires_login()
 def add():
+    import urllib
+    import urllib2
+    from gluon.contrib import simplejson
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
 
@@ -103,6 +138,17 @@ def add():
     else:
         rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count-1).select().first()
         rhyme_word = rhyme_line.line.split(' ')[-1]
+
+    #Get use the rhymebrain API
+    url = 'http://rhymebrain.com/talk'
+    data = {}
+    data['function'] = 'getRhymes'
+    data['word'] = rhyme_word
+    url_values = urllib.urlencode(data)
+    full_url = url + '?' + url_values
+    data = urllib2.urlopen(full_url)
+    result = data.read()
+    parsed_json = simplejson.loads(result)
 
     # Create SQLFORM for the user to add a single line as a String
     form = SQLFORM(db.newline, fields=['line', 'date_posted'])
