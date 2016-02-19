@@ -89,10 +89,10 @@ def edit():
     # Create SQLFORM
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
-    lines_form = []
-    for line in lines:
-        lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
-    #
+    counter = 1
+    delete_form = FORM(INPUT(_type = 'submit', _value ='Delete', _id = counter))
+    if delete_form.accepts(request,session):
+        response.flash = counter
     if form.accepted: redirect(URL('browse'))
     forms = FORM('Username: ',
               INPUT(_name='username'),

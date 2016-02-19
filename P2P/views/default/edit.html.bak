@@ -8,8 +8,12 @@
 </br>
 {{=form}}
 </br>
-{{for line in lines_form:}}
-    {{=line}}
+{{for line in lines:}}
+<form>
+    Lines: 
+    <input type = "text" name = "row" value = "{{=line.line}}" size = "35" readonly>
+    <input type = "button" value = "Delete" Onclick = {{=response.flash = "OK"}}>
+</form>
 {{pass}}
 {{if poem.permission == 'Private':}}
 <h2>

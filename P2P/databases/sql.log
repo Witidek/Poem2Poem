@@ -566,3 +566,37 @@ success!
 timestamp: 2016-02-11T20:32:08.630000
 ALTER TABLE poem ADD line_count INTEGER;
 success!
+DROP TABLE newline;
+success!
+timestamp: 2016-02-18T23:56:54.370000
+CREATE TABLE newline(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poem_id INTEGER REFERENCES poem (id) ON DELETE CASCADE  ,
+    author INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  ,
+    line_number INTEGER,
+    line CHAR(512),
+    date_posted TIMESTAMP
+);
+success!
+DROP TABLE permission;
+success!
+timestamp: 2016-02-18T23:57:03.956000
+CREATE TABLE permission(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    poem_id INTEGER REFERENCES poem (id) ON DELETE CASCADE  ,
+    user_id INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  
+);
+success!
+DROP TABLE poem;
+success!
+timestamp: 2016-02-18T23:57:20.567000
+CREATE TABLE poem(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title CHAR(512),
+    author INTEGER REFERENCES auth_user (id) ON DELETE CASCADE  ,
+    body TEXT,
+    date_posted TIMESTAMP,
+    permission CHAR(512),
+    line_count INTEGER
+);
+success!
