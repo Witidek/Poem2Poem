@@ -25,14 +25,14 @@ def poem():
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-    rows = db(db.newline.poem_id == poem.id).select()
+    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
     contributors = db(db.newline.poem_id == poem.id).select(db.newline.author, groupby=db.newline.author)
 
     return locals()
 
 @auth.requires_login()
 def create():
-    form = SQLFORM(db.poem).process()
+    form = SQLFORM(db.poem, fields=['title', 'body', 'permission'], labels = {'body':'First two lines'}).process()
     if form.accepted:
         # Create a new insert into permission table if poem was created Private (give owner permission)
         if form.vars.permission == 'Private':
@@ -50,13 +50,13 @@ def edit():
     poem = db.poem(poem_id)
 
     # Redirect if current user is not owner of poem
-    if poem.author != auth.user:
+    if poem.author != auth.user.id:
         session.flash = 'You are not the owner of this poem and cannot edit it'
         redirect(URL('poem',args=poem.id))
 
     # Create SQLFORM
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
-    lines = db(db.newline.poem_id == poem_id).select()
+    lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
     lines_form = []
     for line in lines:
         lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
@@ -86,11 +86,11 @@ def add():
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-    rows = db(db.newline.poem_id == poem.id).select()
+    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
 
     # Check if poem is private and if current user has proper permissions, redirect if no permission
     if poem.permission == 'Private':
-        if not db(db.permission.poem_id == poem.id, db.permission.user_id == auth.user).select():
+        if not db(db.permission.poem_id == poem.id, db.permission.user_id == auth.user.id).select():
             session.flash = 'You do not have permission to add to this poem'
             redirect(URL('poem', args=poem.id))
 
@@ -105,13 +105,13 @@ def add():
         rhyme_word = rhyme_line.line.split(' ')[-1]
 
     # Create SQLFORM for the user to add a single line as a String
-    form = SQLFORM(db.newline, fields=['line', 'date_posted'])
+    form = SQLFORM(db.newline, fields=['line'])
     form.vars.poem_id = poem.id
-    form.vars.line_number = poem.line_count
+    form.vars.line_number = poem.line_count + 1
 
     form.process()
     if form.accepted:
-        poem.update_record(line_count=line_count)
+        poem.update_record(line_count=poem.line_count + 1)
         redirect(URL('poem', args=poem.id))
     return locals()
 
