@@ -94,7 +94,9 @@ db.define_table('poem',
                 Field('body', 'text'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ),
-                Field('line_count', 'integer', default=2, writable=False))
+                Field('line_count', 'integer', default=2, writable=False),
+                Field('user_editing', 'boolean', default=False, readable=False, writable=False),
+                Field('edit_timestamp', 'datetime', readable=False, writable=False))
 db.poem.id.readable = False
 
 db.define_table('newline',

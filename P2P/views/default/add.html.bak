@@ -16,7 +16,7 @@ Author: {{=db.auth_user(poem.author).username}}
     </tr>
     <tr>
      {{for i ,row in enumerate(parsed_json):}}
-        {{if 25 > i:}}
+        {{if 50 > i:}}
         <td>{{= parsed_json[i]['word']}}</td>
         <td>{{= parsed_json[i]['syllables']}}</td>
         {{pass}}

@@ -7,11 +7,10 @@
 ## - user is required for authentication and authorization
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
-
+import datetime
 
 def index():
     return locals()
-
 
 def user():
     return dict(form=auth())
@@ -91,7 +90,10 @@ def edit():
     lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
     lines_form = []
     for line in lines:
-        lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
+        delete_form = FORM('Line: ' + line.line, INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit')).process(onvalidation=delete_line, next=URL('edit', args=poem.id))
+        delete_form.vars.line = line.line
+        lines_form.append(delete_form)
+
     #
     if form.accepted: redirect(URL('browse'))
     forms = FORM('Username: ',
@@ -111,11 +113,17 @@ def edit():
                     response.flash = 'Added'
     return locals()
 
+def delete_line(form):
+    print form.vars.line_id
+    row = db(db.newline.id == form.vars.line_id).select().first()
+    row.update_record(line = '')
+
 @auth.requires_login()
 def add():
     import urllib
     import urllib2
     from gluon.contrib import simplejson
+
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
 
@@ -125,9 +133,23 @@ def add():
 
     # Check if poem is private and if current user has proper permissions, redirect if no permission
     if poem.permission == 'Private':
-        if not db(db.permission.poem_id == poem.id, db.permission.user_id == auth.user.id).select():
+        print 'private'
+        print db(db.permission.poem_id == poem.id).select().first().user_id
+        print auth.user.id
+        if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():
             session.flash = 'You do not have permission to add to this poem'
             redirect(URL('poem', args=poem.id))
+
+    # Check and redirect if another user is currently trying to add a line for this poem
+    # if poem.user_editing:
+    #     edit_timestamp = poem.edit_timestamp
+    #     minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
+    #     if minutes_elapsed < 5.0:
+    #         session.flash = 'A user is currently adding a line!'
+    #         redirect(URL('poem', args=poem.id))
+
+    # This user can now access the page and start adding a line, set user_editing to True and edit_timestamp
+    poem.update_record(user_editing = True, edit_timestamp = datetime.datetime.now())
 
     # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
     rhyme_word = ''
@@ -136,7 +158,7 @@ def add():
     elif poem.line_count == 3:
         rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
     else:
-        rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count-1).select().first()
+        rhyme_line = db((db.newline.poem_id == poem.id) & (db.newline.line_number == poem.line_count-1)).select().first()
         rhyme_word = rhyme_line.line.split(' ')[-1]
 
     #Get use the rhymebrain API
@@ -151,26 +173,20 @@ def add():
     parsed_json = simplejson.loads(result)
 
     # Create SQLFORM for the user to add a single line as a String
-    form = SQLFORM(db.newline, fields=['line'], onvalidation=add_validation)
+    form = SQLFORM(db.newline, fields=['line'])
     form.vars.poem_id = poem.id
     form.vars.line_number = poem.line_count + 1
 
     form.process()
     if form.accepted:
-        poem.update_record(line_count=poem.line_count + 1)
+        poem.update_record(line_count=poem.line_count + 1, user_editing = False)
         redirect(URL('poem', args=poem.id))
     return locals()
-
-def add_validation(form):
-    current_line_count = db(db.poem.id == form.vars.poem_id).select().first().line_count
-    if current_line_count != form.vars.line_number + 1:
-        form.errors = True
-        redirect(URL('add', args=poem.id))
 
 @auth.requires_login()
 def profile():
     user = auth.user
     poem = db.poem
     poems_owned = db(db.poem.author == user.id).select()
-    poems_contributed = db(db.newline.author == user.id, db.poem.id == db.newline.poem_id).select(groupby=db.poem.id)
+    poems_contributed = db((db.newline.author == user.id) & (db.poem.id == db.newline.poem_id)).select(groupby=db.poem.id)
     return locals()

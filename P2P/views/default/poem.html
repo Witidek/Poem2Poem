@@ -3,7 +3,7 @@
 <h2>{{=poem.title}}</h2>
 </br>
 <pre>
-{{=poem.body}} {{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{pass}}{{pass}}</pre>
+<a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}">{{=row.line}}</a>{{pass}}{{pass}}</pre>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user(person.author).username}} {{pass}}{{pass}}
@@ -13,3 +13,9 @@ Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user
 {{if auth.user_id == poem.author:}}
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>
 {{pass}}
+
+<script>
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+});
+</script>

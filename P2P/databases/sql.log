@@ -566,3 +566,8 @@ success!
 timestamp: 2016-02-11T20:32:08.630000
 ALTER TABLE poem ADD line_count INTEGER;
 success!
+timestamp: 2016-02-19T00:48:34.213000
+ALTER TABLE poem ADD edit_timestamp TIMESTAMP;
+timestamp: 2016-02-19T00:48:34.360000
+ALTER TABLE poem ADD user_editing CHAR(1);
+success!
