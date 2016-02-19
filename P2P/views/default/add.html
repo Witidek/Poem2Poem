@@ -8,19 +8,14 @@ Author: {{=db.auth_user(poem.author).username}}
 <h2>Add a line to this poem</h2>
 {{=form}}
 
-
-<form action="javascript:RhymeBrainSubmit()" id="RhymeBrainForm">
-    <input type=text id="RhymeBrainInput" value = {{=rhyme_word}}>
-    <input type=submit value="Rhyme">
-</form>
-
-
-<script type="text/javascript">
-    window.onload = function(){
-    document.forms['RhymeBrainForm'].submit()
-
-}
-   var RhymeBrainMaxResults = 50;
-</script>
-<script type="text/javascript" src="http://rhymebrain.com/external.js"></script>
-Rhyme results are provided by <a href="http://rhymebrain.com">RhymeBrain.com</a>
+<table class="table">
+    <tr>
+        <th>Words that rhyme with {{=rhyme_word}}</th>
+        <th>Syllables</th>
+    </tr>
+    <tr>
+     {{for i ,row in enumerate(parsed_json):}}
+        <td>{{= parsed_json[i]['word']}}</td>
+        <td>{{= parsed_json[i]['syllables']}}</td>
+    </tr>
+{{pass}}
