@@ -151,7 +151,7 @@ def add():
     parsed_json = simplejson.loads(result)
 
     # Create SQLFORM for the user to add a single line as a String
-    form = SQLFORM(db.newline, fields=['line'])
+    form = SQLFORM(db.newline, fields=['line'], onvalidation=add_validation)
     form.vars.poem_id = poem.id
     form.vars.line_number = poem.line_count + 1
 
@@ -160,6 +160,12 @@ def add():
         poem.update_record(line_count=poem.line_count + 1)
         redirect(URL('poem', args=poem.id))
     return locals()
+
+def add_validation(form):
+    current_line_count = db(db.poem.id == form.vars.poem_id).select().first().line_count
+    if current_line_count != form.vars.line_number + 1:
+        form.errors = True
+        redirect(URL('add', args=poem.id))
 
 @auth.requires_login()
 def profile():

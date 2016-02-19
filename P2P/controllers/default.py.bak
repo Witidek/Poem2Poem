@@ -57,7 +57,7 @@ def poem():
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-    rows = db(db.newline.poem_id == poem.id).select()
+    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
     contributors = db(db.newline.poem_id == poem.id).select(db.newline.author, groupby=db.newline.author)
 
     return locals()
@@ -88,7 +88,7 @@ def edit():
 
     # Create SQLFORM
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
-    lines = db(db.newline.poem_id == poem_id).select()
+    lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
     lines_form = []
     for line in lines:
         lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
@@ -136,7 +136,7 @@ def add():
     elif poem.line_count == 3:
         rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
     else:
-        rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count - 1).select().first()
+        rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count-1).select().first()
         rhyme_word = rhyme_line.line.split(' ')[-1]
 
     #Get use the rhymebrain API
@@ -151,7 +151,7 @@ def add():
     parsed_json = simplejson.loads(result)
 
     # Create SQLFORM for the user to add a single line as a String
-    form = SQLFORM(db.newline, fields=['line'])
+    form = SQLFORM(db.newline, fields=['line'], onvalidation=add_validation)
     form.vars.poem_id = poem.id
     form.vars.line_number = poem.line_count + 1
 
@@ -160,6 +160,12 @@ def add():
         poem.update_record(line_count=poem.line_count + 1)
         redirect(URL('poem', args=poem.id))
     return locals()
+
+def add_validation(form):
+    current_line_count = db(db.poem.id = form.vars.poem_id).select().first().line_count
+    if current_line_count != form.vars.line_number + 1:
+        form.errors = True
+        redirect(URL('add', args=poem.id))
 
 @auth.requires_login()
 def profile():
