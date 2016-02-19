@@ -1,9 +1,10 @@
 {{extend 'layout.html'}}
 <h2>Browse Poems</h2>
-
+<h4 align="right" >
+    <input type=button  onClick="location.href='/P2P/default/search'"   value='Search Poem'>
+</h4>
 <table class="table">
-   <col width="130">
-  <col width="80">
+
     <tr>
         <th>Title</th>
         <th>Author</th>

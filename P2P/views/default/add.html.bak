@@ -9,13 +9,16 @@ Author: {{=db.auth_user(poem.author).username}}
 {{=form}}
 
 <table class="table">
+  <col width="500">
     <tr>
         <th>Words that rhyme with {{=rhyme_word}}</th>
         <th>Syllables</th>
     </tr>
     <tr>
      {{for i ,row in enumerate(parsed_json):}}
+        {{if 25 > i:}}
         <td>{{= parsed_json[i]['word']}}</td>
         <td>{{= parsed_json[i]['syllables']}}</td>
+        {{pass}}
     </tr>
 {{pass}}
