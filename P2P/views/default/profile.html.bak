@@ -10,6 +10,7 @@ Username: {{=user.username}}
     </tr>
     <tr>
         {{for row in poems_owned:}}
+        <tr>
             {{str = ''}}
             <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
             <td> {{=row.date_posted}}</td>
@@ -19,6 +20,7 @@ Username: {{=user.username}}
                 {{pass}}
              {{pass}}
             <td>{{=str}}</td>
+        </tr>
         {{pass}}
     </tr>
 
@@ -32,7 +34,7 @@ Username: {{=user.username}}
     </tr>
         {{for row in poems_contributed:}}
         <tr>
-            <td><a href="{{=URL('poem',args=row.poem_id)}}"> {{=row.poem.title}}</td>
+            <td><a href="{{=URL('poem',args=row.poem.id)}}"> {{=row.poem.title}}</td>
             <td> {{=row.poem.date_posted}}</td>
         </tr>
         {{pass}}
