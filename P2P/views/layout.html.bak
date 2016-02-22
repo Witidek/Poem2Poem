@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+
+
 <!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="{{=T.accepted_language or 'en'}}"> <!--<![endif]-->
   <head>
     <meta charset="utf-8">
@@ -45,7 +47,6 @@
     }}
   </head>
   <body>
-      <t1 document.body.style.backgroundColor = "#000000";</t1>
     <!--[if lt IE 8]><p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p><![endif]-->
     <div class="w2p_flash alert alert-dismissable">{{=response.flash or ''}}</div>
     <!-- Navbar ======================================= -->

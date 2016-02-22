@@ -10,6 +10,7 @@ Username: {{=user.username}}
     </tr>
     <tr>
         {{for row in poems_owned:}}
+        <tr>
             {{str = ''}}
             <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
             <td> {{=row.date_posted}}</td>
@@ -19,6 +20,7 @@ Username: {{=user.username}}
                 {{pass}}
              {{pass}}
             <td>{{=str}}</td>
+        </tr>
         {{pass}}
     </tr>
 

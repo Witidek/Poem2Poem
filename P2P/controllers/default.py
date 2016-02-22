@@ -63,7 +63,7 @@ def poem():
 
 @auth.requires_login()
 def create():
-    form = SQLFORM(db.poem, fields=['title', 'body', 'permission'], labels = {'body':'First two lines'}).process()
+    form = SQLFORM(db.poem, fields=['title', 'description', 'body', 'permission'], labels = {'body':'First two lines'}).process()
     if form.accepted:
         # Create a new insert into permission table if poem was created Private (give owner permission)
         if form.vars.permission == 'Private':
