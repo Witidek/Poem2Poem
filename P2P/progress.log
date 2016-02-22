@@ -1065,3 +1065,8 @@
 [2016-02-21 22:46:40] EDIT P2P/views/default/add.html: -1
 [2016-02-21 23:25:16] EDIT P2P/views/default/add.html: -18
 [2016-02-21 23:42:48] EDIT P2P/models/db.py: 0
+[2016-02-22 00:04:59] EDIT P2P/views/default/browse.html: 0
+[2016-02-22 00:09:09] EDIT P2P/controllers/default.py: 0
+[2016-02-22 00:09:11] EDIT P2P/models/db.py: 1
+[2016-02-22 00:12:12] EDIT P2P/controllers/default.py: -9
+[2016-02-22 00:13:49] EDIT P2P/views/default/specialadd.html: -7

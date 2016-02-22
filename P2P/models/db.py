@@ -91,6 +91,7 @@ auth.settings.reset_password_requires_verification = True
 db.define_table('poem',
                 Field('title', 'string', requires=IS_NOT_EMPTY()),
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
+                Field('description', 'text'),
                 Field('body', 'text'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ),

@@ -235,16 +235,6 @@ def specialadd():
             session.flash = 'You do not have permission to add to this poem'
             redirect(URL('poem', args=poem.id))
 
-    # Check and redirect if another user is currently trying to add a line for this poem
-    # if poem.user_editing:
-    #     edit_timestamp = poem.edit_timestamp
-    #     minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
-    #     if minutes_elapsed < 5.0:
-    #         session.flash = 'A user is currently adding a line!'
-    #         redirect(URL('poem', args=poem.id))
-
-    # This user can now access the page and start adding a line, set user_editing to True and edit_timestamp
-    poem.update_record(user_editing = True, edit_timestamp = datetime.datetime.now())
     # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
     rhyme_word = ''
     rhyme_line = db((db.newline.poem_id == poem.id) & (db.newline.line_number == lineNumber+2)).select().first()
