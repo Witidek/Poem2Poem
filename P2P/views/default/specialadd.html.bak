@@ -1,22 +1,19 @@
 {{extend 'layout.html'}}
 
 <h2>{{=poem.title}}</h2>
-{{addRhyme = False}}
 </br>
-<pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
+<pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{if row.line_number == request.args(1,cast = int):}}<font color = "red"><b><u><i>--Editing this line!--</i></u></b></font>{{pass}}{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
-{{if (poem.line_count+1) % 4 == 1 or (poem.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
-{{if addRhyme == False:}}
 <h2>Add a line to this poem</h2>
-{{elif addRhyme == True:}}
-<h2>Add a line to this poem</h2>
+{{if (request.args(1,cast = int) % 4 == 1) or (request.args(1,cast = int) % 4 == 0) :}}
 <h2>Start a New Rhyme</h2>
 {{pass}}
-
+{{=rhyme_word}}
 {{=form}}
-{{if addRhyme == False:}}
+{{if (request.args(1,cast = int) % 4 == 3) or (request.args(1,cast = int)% 4 == 0) or test == True:}}
+{{=rhyme_word}}
 <table class="table">
   <col width="500">
     <tr>

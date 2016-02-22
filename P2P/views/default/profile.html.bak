@@ -32,7 +32,7 @@ Username: {{=user.username}}
     </tr>
         {{for row in poems_contributed:}}
         <tr>
-            <td><a href="{{=URL('poem',args=row.poem_id)}}"> {{=row.poem.title}}</td>
+            <td><a href="{{=URL('poem',args=row.poem.id)}}"> {{=row.poem.title}}</td>
             <td> {{=row.poem.date_posted}}</td>
         </tr>
         {{pass}}
