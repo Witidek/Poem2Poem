@@ -3,7 +3,33 @@
 <h4 align="right" >
     <input type=button  onClick="location.href='/P2P/default/search'"   value='Search'>
 </h4>
-<table class="table">
+
+<head>
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table#t01 tr:nth-child(even) {
+    background-color: #eee;
+}
+table#t01 tr:nth-child(odd) {
+   background-color:#fff;
+}
+table#t01 th	{
+    background-color: black;
+    color: white;
+}
+</style>
+</head>
+<table class="table" id= "t01">
 
     <tr>
         <th>Title</th>
@@ -16,7 +42,7 @@
     <tr>
         <td><a href="{{=URL('poem',args=row.id)}}">{{=row.title}}</td>
         <td>{{=db.auth_user(row.author).username}}</td>
-        <td>{{if row.description:}} {{=row.description[0:30]}} {{if len(row.description) > 30:}} ... {{pass}} {{else:}} None {{pass}}</td>
+        <td>{{if row.description:}}{{=row.description[0:30]}}{{if len(row.description) > 30:}}...{{pass}}{{else:}}None{{pass}}</td>
         <td>{{=row.permission}}</td>
         <td>{{=row.body.split('\n')[0]}}</td>
     </tr>

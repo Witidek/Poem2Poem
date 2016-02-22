@@ -1,21 +1,29 @@
 {{extend 'layout.html'}}
 
-<h2>{{=poem.title}}</h2>
+<h2 align = "center">{{=poem.title}}</h2>
 </br>
-<pre><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}">{{=row.line}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #000000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</pre>
+<center>
+<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></center>
+<center>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user(person.author).username}} {{pass}}{{pass}}
 </br>
 </br>
 {{ if 16 > poem.line_count:}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
 {{pass}}
+<h4>Poem Description: </h4>
+<div style="width:500px;overflow:auto"><p>{{=poem.description}}</p></div>
 {{if auth.user_id == poem.author:}}
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>
 {{pass}}
 </br></br>
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
+</br>
+
+</center>
 <script>
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();

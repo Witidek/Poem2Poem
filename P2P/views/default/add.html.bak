@@ -3,7 +3,9 @@
 <h2>{{=poem.title}}</h2>
 {{addRhyme = False}}
 </br>
-<pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
+<center>
+<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></center>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
@@ -15,56 +17,45 @@ Author: {{=db.auth_user(poem.author).username}}
 <h2>Start a New Rhyme</h2>
 {{pass}}
 
+
+
 {{=form}}
+
+
+
 {{if addRhyme == False:}}
 <table class="table">
   <col width="500">
     <tr>
-        <th>Words that rhyme with {{=rhyme_word}}</th>
         <th>Syllables</th>
+        <th>Words that rhyme with {{=rhyme_word}}</th>
     </tr>
-    <tr>
-     {{for i ,row in enumerate(parsed_json):}}
-        {{if 50 > i:}}
-        <td>{{= parsed_json[i]['word']}}</td>
-        <td>{{= parsed_json[i]['syllables']}}</td>
+   {{for x in range(0,len(sorted_syllables)):}}
+   <tr>
+       {{if len(sorted_syllables[x]) > 0:}}
+           {{words = ''}}
+            <td>{{=x}} Syllables: </td>
+            {{words = ' , '.join(sorted_syllables[x][0:10])}}
+            <td>{{=words}}</td>
         {{pass}}
+{{pass}}
     </tr>
-    {{pass}}
+
+        {{pass}}
 {{pass}}
 
 <script language="JavaScript">
-$(document).ready(function(){
     setTimeout("window.location.href='{{=URL('poem', args=poem.id)}}';",60000);
-
-    var _wasPageCleanedUp = false;
-    function pageCleanup()
-    {
-        if (!_wasPageCleanedUp)
-        {
-            $.ajax({
-                type: 'GET',
-                async: false,
-                url: '{{=URL('unlock_mutex', args=poem.id)}}',
-                success: function ()
-                {
-                    _wasPageCleanedUp = true;
-                }
-            });
-        }
-    }
-
 
     $(window).on('beforeunload', function ()
     {
         //this will work only for Chrome
-        pageCleanup();
+        ajax('{{=URL('unlock_mutex', args=poem.id)}}',['quit'],'target');
     });
 
     $(window).on("unload", function ()
     {
         //this will work for other browsers
-        pageCleanup();
+        ajax('{{=URL('unlock_mutex', args=poem.id)}}',['quit'],'target');
     });
-});
 </script>

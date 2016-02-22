@@ -2,23 +2,60 @@
 <h2>
     Edit your poem
 </h2>
-<pre>
-{{=poem.body}} {{if lines:}}{{for line in lines:}}</br>{{=line.line}}{{pass}}{{pass}}
-</pre>
+<center>
+
+<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></center>
 </br>
 {{=form}}
 </br>
-{{for line in lines:}}
-<form>
-    Lines: 
-    <input type = "text" name = "row" value = "{{=line.line}}" size = "35" readonly>
-    <input type = "button" value = "Delete" onclick = {{response.flash = "OK"}}>
-</form>
+<head>
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table#t01 tr:nth-child(even) {
+    background-color: #eee;
+    color: black;
+}
+table#t01 tr:nth-child(odd) {
+   background-color:#fff;
+    color: black;
+}
+table#t01 th	{
+    background-color: black;
+    color: white;
+}
+</style>
+</head>
+
+<table class="table" style = "width:50%" align = "center" border = "2" id="t01">
+    <tr>
+        <th>Line</th>
+        <th>Delete</th>
+    </tr>
+{{for num in range(0,len(line_form)):}}
+        <td><font color = "#9900ff">Line {{=num+3}} : </font><b>{{=line_form[num]}}</b></td>
+        <td>{{=lines_form[num]}}{{lines_form[num].deleted = True}}</td>
+</tr>
 {{pass}}
+
+</table>
 {{if poem.permission == 'Private':}}
-<h2>
+<h2 align = "center">
     Added Permissions
 </h2>
+<h4 align = "center">
+   {{=forms}} 
+</h4>
 
-{{=forms}}
+
 {{pass}}

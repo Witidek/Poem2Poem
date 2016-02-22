@@ -6,21 +6,21 @@ Username: {{=user.username}}
     <tr>
         <th>Poems Owned</th>
         <th>Date Posted</th>
+        <th>Public or Private </th>
         <th>Permissions</th>
     </tr>
+     {{for row in poems_owned:}}
     <tr>
-        {{for row in poems_owned:}}
-        <tr>
             {{str = ''}}
             <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
             <td> {{=row.date_posted}}</td>
+            <td> {{=row.permission}}</td>
              {{for permission in db(db.permission).select():}}
                 {{if permission.poem_id == row.id:}}
                     {{str = str + '  ' + permission.user_id.username}}
                 {{pass}}
              {{pass}}
             <td>{{=str}}</td>
-        </tr>
         {{pass}}
     </tr>
 

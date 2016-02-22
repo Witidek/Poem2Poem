@@ -10,9 +10,9 @@ h3 {font-size:2.00em}
 h4 {font-size:1.50em}
 h5 {font-size:1.25em}
 h6 {font-size:1.12em}
-th,label {font-weight:bold; white-space:nowrap;}
-td,th {text-align:left; padding:2px 5px 2px 5px}
-th {vertical-align:middle; border-right:1px solid white}
+th,label {font-weight:bold; white-space:nowrap; border: 1px solid black}
+td,th {text-align:left; padding:2px 5px 2px 5px; }
+th {vertical-align:middle; border-right:1px solid white;}
 td {vertical-align:top}
 form table tr td label {text-align:left}
 p,table,ol,ul {padding:0; margin: 0.75em 0}
