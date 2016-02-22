@@ -25,8 +25,12 @@ response.google_analytics_id = None
 #########################################################################
 
 response.menu = [
-    (T('Home'), False, URL('default', 'index'), [])
+    (T('Home'), False, URL('default', 'index'), []),
+    (T('Browse Poems'),False, URL('default','browse'),[]),
+    (T('Search Poems'),False, URL('default','search'),[]),
+    (T('Profile'),False, URL('default','profile'),[])
 ]
+
 
 DEVELOPMENT_MENU = True
 

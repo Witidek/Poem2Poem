@@ -1,0 +1,39 @@
+{{extend 'layout.html'}}
+
+<h2>{{=poem.title}}</h2>
+</br>
+<pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{if row.line_number == request.args(1,cast = int):}}<font color = "red"><b><u><i>--Editing this line!--</i></u></b></font>{{pass}}{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
+Author: {{=db.auth_user(poem.author).username}}
+</br>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
+<h2>Add a line to this poem</h2>
+{{if (request.args(1,cast = int) % 4 == 1) or (request.args(1,cast = int) % 4 == 0) :}}
+<h2>Start a New Rhyme</h2>
+{{pass}}
+{{=rhyme_word}}
+{{=form}}
+{{if (request.args(1,cast = int) % 4 == 3) or (request.args(1,cast = int)% 4 == 0) or test == True:}}
+{{=rhyme_word}}
+<table class="table">
+  <col width="500">
+    <tr>
+        <th>Words that rhyme with {{=rhyme_word}}</th>
+        <th>Syllables</th>
+    </tr>
+    <tr>
+     {{for i ,row in enumerate(parsed_json):}}
+        {{if 50 > i:}}
+        <td>{{= parsed_json[i]['word']}}</td>
+        <td>{{= parsed_json[i]['syllables']}}</td>
+        {{pass}}
+    </tr>
+    {{pass}}
+{{pass}}
+
+<script language="JavaScript">
+    window.onbeforeunload = confirmExit;
+    function confirmExit()
+    {
+        return "You have attempted to leave this page.  If you have made any changes to the fields without clicking the Save button, your changes will be lost.  Are you sure you want to exit this page?";
+    }
+</script>

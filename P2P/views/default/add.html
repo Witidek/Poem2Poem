@@ -6,6 +6,7 @@
 <pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
 Author: {{=db.auth_user(poem.author).username}}
 </br>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
 {{if (poem.line_count+1) % 4 == 1 or (poem.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
 {{if addRhyme == False:}}
 <h2>Add a line to this poem</h2>
