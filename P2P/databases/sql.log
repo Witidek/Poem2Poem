@@ -571,3 +571,6 @@ ALTER TABLE poem ADD edit_timestamp TIMESTAMP;
 timestamp: 2016-02-19T00:48:34.360000
 ALTER TABLE poem ADD user_editing CHAR(1);
 success!
+timestamp: 2016-02-21T20:12:49.825000
+ALTER TABLE poem ADD description TEXT;
+success!
