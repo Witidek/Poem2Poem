@@ -9,7 +9,7 @@ Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user
 </br>
 </br>
 {{ if 16 > poem.line_count:}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
 {{pass}}
 {{if auth.user_id == poem.author:}}
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>

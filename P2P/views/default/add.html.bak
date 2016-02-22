@@ -33,9 +33,37 @@ Author: {{=db.auth_user(poem.author).username}}
 {{pass}}
 
 <script language="JavaScript">
-    window.onbeforeunload = confirmExit;
-    function confirmExit()
+$(document).ready(function(){
+    setTimeout("window.location.href='{{=URL('poem', args=poem.id)}}';",60000);
+
+    var _wasPageCleanedUp = false;
+    function pageCleanup()
     {
-        return "You have attempted to leave this page.  If you have made any changes to the fields without clicking the Save button, your changes will be lost.  Are you sure you want to exit this page?";
+        if (!_wasPageCleanedUp)
+        {
+            $.ajax({
+                type: 'GET',
+                async: false,
+                url: '{{=URL('unlock_mutex', args=poem.id)}}',
+                success: function ()
+                {
+                    _wasPageCleanedUp = true;
+                }
+            });
+        }
     }
+
+
+    $(window).on('beforeunload', function ()
+    {
+        //this will work only for Chrome
+        pageCleanup();
+    });
+
+    $(window).on("unload", function ()
+    {
+        //this will work for other browsers
+        pageCleanup();
+    });
+});
 </script>

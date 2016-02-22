@@ -94,9 +94,7 @@ db.define_table('poem',
                 Field('body', 'text'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ),
-                Field('line_count', 'integer', default=2, writable=False),
-                Field('user_editing', 'boolean', default=False, readable=False, writable=False),
-                Field('edit_timestamp', 'datetime', readable=False, writable=False))
+                Field('line_count', 'integer', default=2, writable=False))
 db.poem.id.readable = False
 
 db.define_table('newline',
@@ -109,6 +107,11 @@ db.define_table('newline',
 db.define_table('permission',
                 Field('poem_id', 'reference poem', readable=False, writable=False),
                 Field('user_id', db.auth_user, default=auth.user_id, readable=False, writable=False))
+
+db.define_table('mutex',
+                Field('poem_id', 'reference poem', readable=False, writable=False),
+                Field('editing', 'boolean', default=False, readable=False, writable=False),
+                Field('edit_timestamp', 'datetime', readable=False, writable=False))
 
 
 ## after defining tables, uncomment below to enable auditing
