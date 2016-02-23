@@ -106,7 +106,7 @@ def edit():
     # Load poem using the URL argument as poem id
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
-    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
+    rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
     # Redirect if current user is not owner of poem
     if poem.author != auth.user.id:
         session.flash = 'You are not the owner of this poem and cannot edit it'

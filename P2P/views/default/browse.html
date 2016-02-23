@@ -39,6 +39,7 @@ table#t01 th	{
     <tr>
         <th>Title</th>
         <th>Author</th>
+        <th>Poem Type</th>
         <th>Description</th>
         <th>Permission to add line</th>
     </tr>
@@ -46,14 +47,8 @@ table#t01 th	{
     <tr>
         <td><a href="{{=URL('poem',args=row.id)}}" style="color: #008fb3"><b>{{=row.title}}</b></td>
         <td>{{=db.auth_user(row.author).username}}</td>
-        <td>{{if row.description:}}
-                {{=row.description[0:30]}}
-                {{if len(row.description) > 30:}}
-                    ...
-                {{pass}}
-            {{else:}}
-                None
-            {{pass}}</td>
+        <td>{{=row.category}}</td>
+        <td>{{if row.description:}}{{=row.description[0:30]}}{{if len(row.description) > 30:}}...{{pass}}{{else:}}None{{pass}}</td>
         <td>{{=row.permission}}</td>
     </tr>
     {{pass}}

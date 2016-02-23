@@ -10,6 +10,7 @@
 <div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}"style="color: #000000">{{if line.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=line.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=line.line_number}}  | </b></div></font>{{=line.line}}{{pass}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if line.line_number % 4 == 0 and 16 > line.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
 
 {{elif poem.category == 'Haiku':}}
+<center>
 <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if words:}}{{for word in words:}} <a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}}</a>{{pass}}{{pass}}</font></div></pre></div></center>
 {{pass}}
 <center>
