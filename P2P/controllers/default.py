@@ -106,7 +106,7 @@ def edit():
     # Load poem using the URL argument as poem id
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
-
+    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
     # Redirect if current user is not owner of poem
     if poem.author != auth.user.id:
         session.flash = 'You are not the owner of this poem and cannot edit it'
@@ -116,12 +116,13 @@ def edit():
     form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
     lines = db(db.new_line.poem_id == poem_id).select(orderby=db.new_line.line_number)
     lines_form = []
+    line_form = []
     for line in lines:
-        delete_form = FORM('Line: ' + line.line, INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit')).process(onvalidation=delete_line, next=URL('edit', args=poem.id))
+        delete_form = FORM(INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit', _value = 'Delete')).process(onvalidation=delete_line, next=URL('edit', args=poem.id))
         delete_form.vars.line = line.line
         lines_form.append(delete_form)
+        line_form.append(line.line)
 
-    #
     if form.accepted: redirect(URL('browse'))
     forms = FORM('Username: ',
               INPUT(_name='username'),
@@ -171,7 +172,7 @@ def add_check():
         if mutex.editing:
             edit_timestamp = mutex.edit_timestamp
             minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
-            if minutes_elapsed < 0.2:
+            if minutes_elapsed < 0.1:
                 session.flash = 'A user is currently adding a line!'
                 redirect(URL('poem', args=poem_id))
 
@@ -226,6 +227,12 @@ def add():
         data = urllib2.urlopen(full_url)
         result = data.read()
         parsed_json = simplejson.loads(result)
+
+        sorted_syllables = [[] for x in range(11)]
+        for entry in parsed_json:
+            syllable_count = int(entry['syllables'])
+            word = str(entry['word'].encode('utf-8',"ignore"))
+            sorted_syllables[syllable_count].append(word)
 
         # Create SQLFORM for the user to add a single line as a String
         form = SQLFORM(db.new_line, fields=['line'])
@@ -313,7 +320,11 @@ def specialadd():
     except IOERROR:
         raise HTTP(404)
         pass
-
+    sorted_syllables = [[] for x in range(11)]
+    for entry in parsed_json:
+        syllable_count = int(entry['syllables'])
+        word = str(entry['word'].encode('utf-8',"ignore"))
+        sorted_syllables[syllable_count].append(word)
     # Create SQLFORM for the user to add a single line as a String
     form = FORM(INPUT(_name = "line"),
                 INPUT(_type="submit",_value = "Add"))

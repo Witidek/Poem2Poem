@@ -1,9 +1,31 @@
 {{extend 'layout.html'}}
 <h2>Search {{=searchType}}</h2>
 <h5 align = "right"> {{=form}}</h5>
+<head>
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table#t01 tr:nth-child(even) {
+    background-color: #ccffff;
+    color: black;
+}
+table#t01 tr:nth-child(odd) {
+   background-color:#fff;
+    color: black;
+}
+</style>
+</head>
 
-
-<table class="table">
+<table class="table" id= "t01">
     <tr>
         <th>Title</th>
         <th>Author</th>
@@ -24,15 +46,15 @@
         {{pass}}
     <tr>
         {{if  match == True and searchType == 'Poems':}}
-        <td><a href="{{=URL('poem',args=row.id)}}">{{=row.title}}</td>
-        <td>{{=db.auth_user(row.author).username}}</td>
-        <td>{{=row.permission}}</td>
-        <td>{{=row.body.split('\n')[0]}}</td>
+           <td><a href="{{=URL('poem',args=row.id)}}" style="color: #004d00"><b>{{=row.title}}</b></td>
+            <td>{{=db.auth_user(row.author).username}}</td>
+            <td>{{=row.permission}}</td>
+            <td>{{=row.body.split('\n')[0]}}</td>
         {{elif match == True and searchType == 'Authors':}}
-        <td><a href="{{=URL('poem',args=row.id)}}">{{=row.title}}</td>
-        <td>{{=db.auth_user(row.author).username}}</td>
-        <td>{{=row.permission}}</td>
-        <td>{{=row.body.split('\n')[0]}}</td>
+            <td><a href="{{=URL('poem',args=row.id)}}" style="color: #004d00"><b>{{=row.title}}</b></td>
+            <td>{{=db.auth_user(row.author).username}}</td>
+            <td>{{=row.permission}}</td>
+            <td>{{=row.body.split('\n')[0]}}</td>
     </tr>
         {{pass}}
     {{pass}}
