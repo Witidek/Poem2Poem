@@ -1,7 +1,4 @@
 {{extend 'layout.html'}}
-{{for i ,row in enumerate(parsed_json):}}
-       <ul style="list-style-type:none">
-           <li>{{= parsed_json[i]['word']}}   {{= parsed_json[i]['syllables']}}</li>
-           <li></li>
-</ul> 
-{{pass}}
+{{=word}}
+</br>
+{{=nsyl}}

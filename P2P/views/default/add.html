@@ -3,38 +3,47 @@
 <h2>{{=poem.title}}</h2>
 {{addRhyme = False}}
 </br>
+{{if poem.category == '16 line ABAB rhyme':}}
 <pre>{{=poem.body}}{{if rows:}}{{for row in rows:}}</br>{{=row.line}}{{if row.line_number % 4 == 0 and 16 > row.line_number:}}</br> {{pass}}{{pass}}{{pass}}</pre>
+{{elif poem.category == 'Haiku':}}
+<pre><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if words:}}{{for word in words:}} <a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}}</a>{{pass}}{{pass}}</pre>
+{{pass}}
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
-{{if (poem.line_count+1) % 4 == 1 or (poem.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
-{{if addRhyme == False:}}
-<h2>Add a line to this poem</h2>
-{{elif addRhyme == True:}}
-<h2>Add a line to this poem</h2>
-<h2>Start a New Rhyme</h2>
-{{pass}}
 
-{{=form}}
-{{if addRhyme == False:}}
-<table class="table">
-  <col width="500">
-    <tr>
-        <th>Words that rhyme with {{=rhyme_word}}</th>
-        <th>Syllables</th>
-    </tr>
-    <tr>
-     {{for i ,row in enumerate(parsed_json):}}
-        {{if 50 > i:}}
-        <td>{{= parsed_json[i]['word']}}</td>
-        <td>{{= parsed_json[i]['syllables']}}</td>
-        {{pass}}
-    </tr>
+{{if poem.category == '16 line ABAB rhyme':}}
+    {{if (abab.line_count+1) % 4 == 1 or (abab.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
+    {{if addRhyme == False:}}
+    <h2>Add a line to this poem</h2>
+    {{elif addRhyme == True:}}
+    <h2>Add a line to this poem</h2>
+    <h2>Start a New Rhyme</h2>
     {{pass}}
+
+    {{=form}}
+    {{if addRhyme == False:}}
+    <table class="table">
+      <col width="500">
+        <tr>
+            <th>Words that rhyme with {{=rhyme_word}}</th>
+            <th>Syllables</th>
+        </tr>
+        <tr>
+         {{for i ,row in enumerate(parsed_json):}}
+            {{if 50 > i:}}
+            <td>{{= parsed_json[i]['word']}}</td>
+            <td>{{= parsed_json[i]['syllables']}}</td>
+            {{pass}}
+        </tr>
+        {{pass}}
+    {{pass}}
+{{elif poem.category == 'Haiku':}}
+    {{=form}}
 {{pass}}
 
 <script language="JavaScript">
-    setTimeout("window.location.href='{{=URL('poem', args=poem.id)}}';",60000);
+    setTimeout("window.location.href='{{=URL('poem', args=poem.id)}}';",600000);
 
     $(window).on('beforeunload', function ()
     {

@@ -2,6 +2,13 @@
 <h2>
     Edit your poem
 </h2>
+<style>
+textarea {
+    width: 100px;
+    height: 70px;
+}
+input { width:50px; }
+</style>
 <pre>
 {{=poem.body}} {{if lines:}}{{for line in lines:}}</br>{{=line.line}}{{pass}}{{pass}}
 </pre>

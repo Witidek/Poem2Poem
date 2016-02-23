@@ -2,14 +2,24 @@
 
 <h2>{{=poem.title}}</h2>
 </br>
-<pre><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}">{{=row.line}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #000000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</pre>
+{{if poem.category == '16 line ABAB rhyme':}}
+<pre><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}">{{=line.line}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #000000">{{=line.line_number}}. Deleted Line: Click Here to Add the Line{{pass}}</a>{{if line.line_number % 4 == 0 and 16 > line.line_number:}} </br> {{pass}}{{pass}}{{pass}}</pre>
+
+{{elif poem.category == 'Haiku':}}
+<pre><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}">{{=poem.body}}</a>{{if words:}}{{for word in words:}} <a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}}</a>{{pass}}{{pass}}</pre>
+{{pass}}
+
 Author: {{=db.auth_user(poem.author).username}}
 </br>
 Contributors: {{if contributors:}}{{for person in contributors:}}{{=db.auth_user(person.author).username}} {{pass}}{{pass}}
 </br>
 </br>
-{{ if 16 > poem.line_count:}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
+
+{{ if poem.category == '16 line ABAB rhyme' and 16 > abab.line_count:}}
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
+{{pass}}
+{{ if poem.category == 'Haiku' and 17 > haiku.syllable_count: }}
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
 {{pass}}
 {{if auth.user_id == poem.author:}}
 <input type=button style = "position:relative;" onClick="location.href='{{=URL('edit',args=poem.id)}}'" value ='Edit poem'>

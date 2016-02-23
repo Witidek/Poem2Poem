@@ -12,7 +12,7 @@
 <form>
     Lines: 
     <input type = "text" name = "row" value = "{{=line.line}}" size = "35" readonly>
-    <input type = "button" value = "Delete" Onclick = {{=response.flash = "OK"}}>
+    <input type = "button" value = "Delete" onclick = {{response.flash = "OK"}}>
 </form>
 {{pass}}
 {{if poem.permission == 'Private':}}

@@ -7,15 +7,6 @@
     <div class="row">
         <div id="web2py_create_form" class="col-lg-6">
             {{=form}}
-            <form action="javascript:RhymeBrainSubmit()">
-                <!-- <input type=text id="RhymeBrainInput"> -->
-                <input type=submit value="Rhyme">
-            </form>
-            <script type="text/javascript">
-                var RhymeBrainMaxResults = 50;
-            </script>
-            <script type="text/javascript" src="http://rhymebrain.com/external.js"></script>
-            Rhyme results are provided by <a href="http://rhymebrain.com">RhymeBrain.com</a>
         </div>
     </div>
 </div>
