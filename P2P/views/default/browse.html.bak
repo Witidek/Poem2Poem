@@ -3,7 +3,10 @@
 <h4 align="right" >
     <input type=button  onClick="location.href='/P2P/default/search'"   value='Search'>
 </h4>
-
+<h4>
+    Here you can see all the poems that have been made by our current user.</br>
+    Click on any of the Titles to view them or add to them!
+</h4>
 <head>
 <style>
 table {
@@ -18,10 +21,12 @@ th, td {
     text-align: left;
 }
 table#t01 tr:nth-child(even) {
-    background-color: #eee;
+    background-color: #ccffff;
+    color: black;
 }
 table#t01 tr:nth-child(odd) {
    background-color:#fff;
+    color: black;
 }
 table#t01 th	{
     background-color: black;
@@ -40,7 +45,7 @@ table#t01 th	{
     </tr>
     {{for row in rows:}}
     <tr>
-        <td><a href="{{=URL('poem',args=row.id)}}">{{=row.title}}</td>
+        <td><a href="{{=URL('poem',args=row.id)}}" style="color: #008fb3"><b>{{=row.title}}</b></td>
         <td>{{=db.auth_user(row.author).username}}</td>
         <td>{{if row.description:}}{{=row.description[0:30]}}{{if len(row.description) > 30:}}...{{pass}}{{else:}}None{{pass}}</td>
         <td>{{=row.permission}}</td>

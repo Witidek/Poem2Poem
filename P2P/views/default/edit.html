@@ -2,6 +2,10 @@
 <h2>
     Edit your poem
 </h2>
+<h4>
+    Here you edit your poems:</br>
+    You can either change your title, first two lines, or description of the poem.
+</h4>
 <center>
 
 <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
@@ -36,7 +40,12 @@ table#t01 th	{
 }
 </style>
 </head>
-
+<h2 align = "center">
+    <u>Delete Lines</u>
+</h2>
+<h4 align = "center">
+    Here you can delete any lines that were added if you do not like them.
+</h4>
 <table class="table" style = "width:50%" align = "center" border = "2" id="t01">
     <tr>
         <th>Line</th>
@@ -49,12 +58,18 @@ table#t01 th	{
 {{pass}}
 
 </table>
+</br></br></br></br>
 {{if poem.permission == 'Private':}}
 <h2 align = "center">
-    Added Permissions
+    <u>Added Permissions</u>
 </h2>
+
 <h4 align = "center">
-   {{=forms}} 
+    Here you can add the username that you allow to edit your private poem.
+</h4>
+</br>
+<h4 align = "center">
+   {{=forms}}
 </h4>
 
 

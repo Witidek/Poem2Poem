@@ -1,0 +1,504 @@
+(dp1
+S'output'
+p2
+S"<type 'exceptions.UnicodeEncodeError'> 'ascii' codec can't encode character u'\\xea' in position 1: ordinal not in range(128)"
+p3
+sS'layer'
+p4
+S'C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers/default.py'
+p5
+sS'code'
+p6
+S'# -*- coding: utf-8 -*-\n# this file is released under public domain and you can use without limitations\n\n#########################################################################\n## This is a sample controller\n## - index is the default action of any application\n## - user is required for authentication and authorization\n## - download is for downloading files uploaded in the db (does streaming)\n#########################################################################\nimport datetime\n\ndef index():\n    return locals()\n\ndef user():\n    return dict(form=auth())\n\ndef browse():\n    rows = db(db.poem).select()\n    return locals()\n\ndef search():\n    rows = db(db.poem).select()\n    searchKey = ""\n    searchType = \'Poems\'\n    form = FORM(\'Search: \',\n              INPUT(_name=\'search\'),\n              \'    Search By:  \',\n              INPUT(_type =\'radio\', _name = \'searchType\', _value = \'Poems\', _checked="checked"), \'  Poems \',\n              INPUT(_type =\'radio\', _name = \'searchType\', _value = \'Authors\'),\'  Authors  \',\n              INPUT(_type=\'submit\'))\n    if form.accepts(request,session):\n        searchKey = form.vars.search\n        searchType = form.vars.searchType\n\n    return locals()\n\ndef test():\n    import urllib\n    import urllib2\n    from gluon.contrib import simplejson\n    url = \'http://rhymebrain.com/talk\'\n    data = {}\n    data[\'function\'] = \'getRhymes\'\n    data[\'word\'] = \'fire\'\n    url_values = urllib.urlencode(data)\n    full_url = url + \'?\' + url_values\n    data = urllib2.urlopen(full_url)\n    result = data.read()\n    parsed_json = simplejson.loads(result)\n    return locals()\n\ndef poem():\n    # Redirect to poem browser if no argument for poem id\n    if not request.args(0): redirect(URL(\'browse\'))\n\n    # Load poem using the URL argument as poem id\n    poem = db.poem(request.args(0,cast=int))\n    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)\n    contributors = db(db.newline.poem_id == poem.id).select(db.newline.author, groupby=db.newline.author)\n\n    return locals()\n\n@auth.requires_login()\ndef create():\n    form = SQLFORM(db.poem, fields=[\'title\', \'description\', \'body\', \'permission\'], labels = {\'body\':\'First two lines\'}).process()\n    if form.accepted:\n        db.mutex.insert(poem_id = form.vars.id, editing = False, edit_timestamp = request.now)\n        # Create a new insert into permission table if poem was created Private (give owner permission)\n        if form.vars.permission == \'Private\':\n            db.permission.insert(user_id = auth.user, poem_id = form.vars.id)\n        redirect(URL(\'browse\'))\n    return locals()\n\n@auth.requires_login()\ndef edit():\n    # Redirect to poem browser if no argument for poem id\n    if not request.args(0): redirect(URL(\'browse\'))\n\n    # Load poem using the URL argument as poem id\n    poem_id = request.args(0,cast=int)\n    poem = db.poem(poem_id)\n    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)\n    # Redirect if current user is not owner of poem\n    if poem.author != auth.user.id:\n        session.flash = \'You are not the owner of this poem and cannot edit it\'\n        redirect(URL(\'poem\',args=poem.id))\n\n    # Create SQLFORM\n    form = SQLFORM(db.poem, record=poem, fields=[\'title\',\'body\']).process()\n    lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)\n    lines_form = []\n    line_form = []\n    for line in lines:\n        delete_form = FORM(INPUT(_name="line_id", _type=\'hidden\',value=line.id), INPUT(_type=\'submit\', _value = \'Delete\')).process(onvalidation=delete_line, next=URL(\'edit\', args=poem.id))\n        delete_form.vars.line = line.line\n        lines_form.append(delete_form)\n        line_form.append(line.line)\n\n    if form.accepted: redirect(URL(\'browse\'))\n    forms = FORM(\'Username: \',\n              INPUT(_name=\'username\'),\n              INPUT(_type=\'submit\'))\n    if forms.accepts(request,session):\n        added = False\n        for users in db(db.auth_user).select():\n            if(users.username == forms.vars.username):\n                for permission in db(db.permission).select():\n                    if(permission.user_id == users.id and permission.poem_id == poem.id):\n                        response.flash = \'Already Added\'\n                    else:\n                        added = True\n                if(added == True):\n                    db.permission.insert(user_id = users.id , poem_id = poem.id)\n                    response.flash = \'Added\'\n    return locals()\n\ndef delete_line(form):\n    print form.vars.line_id\n    row = db(db.newline.id == form.vars.line_id).select().first()\n    row.update_record(line = \'\')\n\nKEY = \'mykey\'\n\n@auth.requires_login()\ndef add_check():\n    # Redirect to poem browser if no argument for poem id\n    if not request.args(0): redirect(URL(\'browse\'))\n    poem_id = request.args(0,cast=int)\n    mutex = db(db.mutex.poem_id == poem_id).select().first()\n\n    if request.vars.quit:\n        mutex.update_record(editing = False)\n    else:\n        # Check and redirect if another user is currently trying to add a line for this poem\n        print mutex.editing\n        if mutex.editing:\n            edit_timestamp = mutex.edit_timestamp\n            minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60\n            if minutes_elapsed < 0.1:\n                session.flash = \'A user is currently adding a line!\'\n                redirect(URL(\'poem\', args=poem_id))\n\n        mutex.update_record(editing = True, edit_timestamp = request.now)\n        redirect(URL(\'add\', args=poem_id, hmac_key=KEY))\n        print \'should not get here\'\n\ndef unlocked_mutex():\n    print \'trying to unlock...\'\n    if not request.args(0): redirect(URL(\'browse\'))\n    poem_id = request.args(0,cast=int)\n    mutex = db(db.mutex.poem_id == poem_id).select().first()\n    if request.vars.quit:\n        mutex.update_record(editing = False)\n        print \'unlocked mutex?\'\n\n@auth.requires_login()\ndef add():\n    import urllib\n    import urllib2\n    from gluon.contrib import simplejson\n\n    if not URL.verify(request, hmac_key=KEY): redirect(URL(\'browse\'))\n    # Redirect to poem browser if no argument for poem id\n    if not request.args(0): redirect(URL(\'browse\'))\n\n    # Load poem using the URL argument as poem id\n    poem = db.poem(request.args(0,cast=int))\n    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)\n\n    # Check if poem is private and if current user has proper permissions, redirect if no permission\n    if poem.permission == \'Private\':\n        print \'private\'\n        print db(db.permission.poem_id == poem.id).select().first().user_id\n        print auth.user.id\n        if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():\n            session.flash = \'You do not have permission to add to this poem\'\n            redirect(URL(\'poem\', args=poem.id))\n\n    # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)\n    rhyme_word = \'\'\n    if poem.line_count == 2:\n        rhyme_word = poem.body.splitlines()[0].split(\' \')[-1]\n    elif poem.line_count == 3:\n        rhyme_word = poem.body.splitlines()[1].split(\' \')[-1]\n    else:\n        rhyme_line = db((db.newline.poem_id == poem.id) & (db.newline.line_number == poem.line_count-1)).select().first()\n        rhyme_word = rhyme_line.line.split(\' \')[-1]\n\n    #Get use the rhymebrain API\n    url = \'http://rhymebrain.com/talk\'\n    data = {}\n    data[\'function\'] = \'getRhymes\'\n    data[\'word\'] = rhyme_word\n    url_values = urllib.urlencode(data)\n    full_url = url + \'?\' + url_values\n    data = urllib2.urlopen(full_url)\n    result = data.read()\n    parsed_json = simplejson.loads(result)\n\n    sorted_syllables = [[] for x in range(11)]\n    for entry in parsed_json:\n        syllable_count = int(entry[\'syllables\'])\n        word = str(entry[\'word\'])\n        sorted_syllables[syllable_count].append(word)\n    # Create SQLFORM for the user to add a single line as a String\n    form = SQLFORM(db.newline, fields=[\'line\'])\n    form.vars.poem_id = poem.id\n    form.vars.line_number = poem.line_count + 1\n\n    form.process()\n    if form.accepted:\n        poem.update_record(line_count=poem.line_count + 1)\n        mutex = db(db.mutex.poem_id == poem.id).select().first()\n        mutex.update_record(editing = False)\n        redirect(URL(\'poem\', args=poem.id))\n    return locals()\n\n@auth.requires_login()\ndef specialadd():\n    import urllib\n    import urllib2\n    from gluon.contrib import simplejson\n\n    # Redirect to poem browser if no argument for poem id\n    if not request.args(0): redirect(URL(\'browse\'))\n    lineNumber = request.args(1,cast = int)\n    # Load poem using the URL argument as poem id\n    poem = db.poem(request.args(0,cast=int))\n    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)\n    check = db((db.newline.poem_id == poem.id) & (db.newline.line_number == request.args(1))).select().first()\n    if check:\n        if not check.line == \'\':\n            redirect(URL(\'browse\'))\n    # Check if poem is private and if current user has proper permissions, redirect if no permission\n    if poem.permission == \'Private\':\n        print \'private\'\n        print db(db.permission.poem_id == poem.id).select().first().user_id\n        print auth.user.id\n        if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():\n            session.flash = \'You do not have permission to add to this poem\'\n            redirect(URL(\'poem\', args=poem.id))\n\n    # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)\n    rhyme_word = \'\'\n    rhyme_line = db((db.newline.poem_id == poem.id) & (db.newline.line_number == lineNumber+2)).select().first()\n    test = False\n    if lineNumber-1 == 2:\n        rhyme_word = poem.body.splitlines()[0].split(\' \')[-1]\n    elif lineNumber-1 == 3:\n        rhyme_word = poem.body.splitlines()[1].split(\' \')[-1]\n    elif rhyme_line:\n        rhyme_word = rhyme_line.line.split(\' \')[-1]\n        test = True\n    else:\n        rhyme_line = db((db.newline.poem_id == poem.id) & (db.newline.line_number == lineNumber-2)).select().first()\n        rhyme_word = rhyme_line.line.split(\' \')[-1]\n\n\n    #Get use the rhymebrain API\n    url = \'http://rhymebrain.com/talk\'\n    data = {}\n    data[\'function\'] = \'getRhymes\'\n    data[\'word\'] = rhyme_word\n    url_values = urllib.urlencode(data)\n    full_url = url + \'?\' + url_values\n    try:\n        data = urllib2.urlopen(full_url)\n        result = data.read()\n        parsed_json = simplejson.loads(result)\n        pass\n    except IOERROR:\n        raise HTTP(404)\n        pass\n    sorted_syllables = [[] for x in range(11)]\n    for entry in parsed_json:\n        syllable_count = int(entry[\'syllables\'])\n        word = str(entry[\'word\'])\n        sorted_syllables[syllable_count].append(word)\n    # Create SQLFORM for the user to add a single line as a String\n    form = FORM(INPUT(_name = "line"),\n                INPUT(_type="submit",_value = "Add"))\n    if form.accepts(request,session):\n        response.flash = form.vars.line\n        if rows:\n                update = db((db.newline.line == \'\') & (db.newline.line_number == request.args(1))).select().first()\n                update.update_record(line = form.vars.line)\n                update.update_record(author = auth.user.id)\n        redirect(URL(\'poem\', args=poem.id))\n    return locals()\n\n@auth.requires_login()\ndef profile():\n    user = auth.user\n    poem = db.poem\n    poems_owned = db(db.poem.author == user.id).select()\n    poems_contributed = db((db.newline.author == user.id) & (db.poem.id == db.newline.poem_id)).select(groupby=db.poem.id)\n    return locals()\n\nresponse._vars=response._caller(add)\n'
+p7
+sS'snapshot'
+p8
+(dp9
+S'exception'
+p10
+(dp11
+S'__getslice__'
+p12
+S"<method-wrapper '__getslice__' of exceptions.UnicodeEncodeError object>"
+p13
+sS'encoding'
+p14
+S"'ascii'"
+p15
+sS'__str__'
+p16
+S"<method-wrapper '__str__' of exceptions.UnicodeEncodeError object>"
+p17
+sS'__reduce__'
+p18
+S'<built-in method __reduce__ of exceptions.UnicodeEncodeError object>'
+p19
+sS'__dict__'
+p20
+S'{}'
+p21
+sS'__sizeof__'
+p22
+S'<built-in method __sizeof__ of exceptions.UnicodeEncodeError object>'
+p23
+sS'__init__'
+p24
+S"<method-wrapper '__init__' of exceptions.UnicodeEncodeError object>"
+p25
+sS'__setattr__'
+p26
+S"<method-wrapper '__setattr__' of exceptions.UnicodeEncodeError object>"
+p27
+sS'__reduce_ex__'
+p28
+S'<built-in method __reduce_ex__ of exceptions.UnicodeEncodeError object>'
+p29
+sS'end'
+p30
+S'2'
+sS'__new__'
+p31
+S'<built-in method __new__ of type object>'
+p32
+sS'__format__'
+p33
+S'<built-in method __format__ of exceptions.UnicodeEncodeError object>'
+p34
+sS'__class__'
+p35
+S"<type 'exceptions.UnicodeEncodeError'>"
+p36
+sS'start'
+p37
+S'1'
+sS'__doc__'
+p38
+S"'Unicode encoding error.'"
+p39
+sS'object'
+p40
+S"u'm\\xeame'"
+p41
+sS'__getitem__'
+p42
+S"<method-wrapper '__getitem__' of exceptions.UnicodeEncodeError object>"
+p43
+sS'__setstate__'
+p44
+S'<built-in method __setstate__ of exceptions.UnicodeEncodeError object>'
+p45
+sS'__getattribute__'
+p46
+S"<method-wrapper '__getattribute__' of exceptions.UnicodeEncodeError object>"
+p47
+sS'args'
+p48
+S"('ascii', u'm\\xeame', 1, 2, 'ordinal not in range(128)')"
+p49
+sS'reason'
+p50
+S"'ordinal not in range(128)'"
+p51
+sS'__subclasshook__'
+p52
+S'<built-in method __subclasshook__ of type object>'
+p53
+sS'__unicode__'
+p54
+S'<built-in method __unicode__ of exceptions.UnicodeEncodeError object>'
+p55
+sS'__delattr__'
+p56
+S"<method-wrapper '__delattr__' of exceptions.UnicodeEncodeError object>"
+p57
+sS'__repr__'
+p58
+S"<method-wrapper '__repr__' of exceptions.UnicodeEncodeError object>"
+p59
+sS'__hash__'
+p60
+S"<method-wrapper '__hash__' of exceptions.UnicodeEncodeError object>"
+p61
+ssS'evalue'
+p62
+S"'ascii' codec can't encode character u'\\xea' in position 1: ordinal not in range(128)"
+p63
+sS'request'
+p64
+cgluon.html
+XML_unpickle
+p65
+(S's?_\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">ajax</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">application</td><td style="vertical-align:top;">:</td><td><div>P2P</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">args</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>22</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cid</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">controller</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_admin</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-4d1e78c1-a10d-4a8d-a683-e74c9ee86b65<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_p2p</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_welcome</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-e9d85415-1ca3-4075-906d-692601e142ff<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">env</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_ENCODING</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_ACCEPT_LANGUAGE</td><td style="vertical-align:top;">:</td><td><div>en-US,en;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_CONNECTION</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_COOKIE</td><td style="vertical-align:top;">:</td><td><div>session_id_welcome=127.0.0.1-e9d85415-1ca3-4075-906d-692601e142ff; session_id_admin=127.0.0.1-4d1e78c1-a10d-4a8d-a683-e74c9ee86b65; session_id_p2p=127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_HOST</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_REFERER</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/P2P/default/poem/22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_UPGRADE_INSECURE_REQUESTS</td><td style="vertical-align:top;">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">HTTP_USER_AGENT</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">PATH_INFO</td><td style="vertical-align:top;">:</td><td><div>/P2P/default/add/22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">QUERY_STRING</td><td style="vertical-align:top;">:</td><td><div>_signature=f958f61b151220c7abd932276e292fcbc8e607f2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_ADDR</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REMOTE_PORT</td><td style="vertical-align:top;">:</td><td><div>52120</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">REQUEST_METHOD</td><td style="vertical-align:top;">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SCRIPT_NAME</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_NAME</td><td style="vertical-align:top;">:</td><td><div>Kevin-VAIO</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PORT</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_PROTOCOL</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">SERVER_SOFTWARE</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\admin\\\\&#x27;, &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\P2P\\\\&#x27;, &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\welcome\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x1ab46c0: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [&#x27;192.168.1.18&#x27;, &#x27;fe80::6c2f:855d:fcb0:2777%9&#x27;, &#x27;2001:0:5ef5:79fd:1416:190b:5616:f67a&#x27;, &#x27;fe80::1416:190b:5616:f67a%8&#x27;], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;scheduler_groups&#x27;: None, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;Kevin-VAIO&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept</td><td style="vertical-align:top;">:</td><td><div>text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_encoding</td><td style="vertical-align:top;">:</td><td><div>gzip, deflate</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_accept_language</td><td style="vertical-align:top;">:</td><td><div>en-US,en;q=0.8</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_connection</td><td style="vertical-align:top;">:</td><td><div>keep-alive</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_cookie</td><td style="vertical-align:top;">:</td><td><div>session_id_welcome=127.0.0.1-e9d85415-1ca3-4075-906d-692601e142ff; session_id_admin=127.0.0.1-4d1e78c1-a10d-4a8d-a683-e74c9ee86b65; session_id_p2p=127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_host</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1:8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_referer</td><td style="vertical-align:top;">:</td><td><div>http://127.0.0.1:8000/P2P/default/poem/22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_upgrade_insecure_requests</td><td style="vertical-align:top;">:</td><td><div>1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">http_user_agent</td><td style="vertical-align:top;">:</td><td><div>Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>192.168.1.18</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>fe80::6c2f:855d:fcb0:2777%9</div></td></tr><tr><td><div>Kevin-VAIO</div></td></tr><tr><td><div>2001:0:5ef5:79fd:1416:190b:5616:f67a</div></td></tr><tr><td><div>fe80::1416:190b:5616:f67a%8</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path_info</td><td style="vertical-align:top;">:</td><td><div>/P2P/default/add/22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">query_string</td><td style="vertical-align:top;">:</td><td><div>_signature=f958f61b151220c7abd932276e292fcbc8e607f2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_addr</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remote_port</td><td style="vertical-align:top;">:</td><td><div>52120</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_method</td><td style="vertical-align:top;">:</td><td><div>GET</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">request_uri</td><td style="vertical-align:top;">:</td><td><div>/P2P/default/add/22?_signature=f958f61b151220c7abd932276e292fcbc8e607f2</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">script_name</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_name</td><td style="vertical-align:top;">:</td><td><div>Kevin-VAIO</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_port</td><td style="vertical-align:top;">:</td><td><div>8000</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_protocol</td><td style="vertical-align:top;">:</td><td><div>HTTP/1.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">server_software</td><td style="vertical-align:top;">:</td><td><div>Rocket 1.2.6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_path</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.13.4-stable+timestamp.2015.12.26.04.59.39</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x00DCD0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x03C02308&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x08C12EB0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi.version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_errors</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;&lt;stderr&gt;&#x27;, mode &#x27;w&#x27; at 0x00DCD0D0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_file_wrapper</td><td style="vertical-align:top;">:</td><td><div>&lt;class wsgiref.util.FileWrapper at 0x03C02308&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_input</td><td style="vertical-align:top;">:</td><td><div>&lt;socket._fileobject object at 0x08C12EB0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multiprocess</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_multithread</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_run_once</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_url_scheme</td><td style="vertical-align:top;">:</td><td><div>http</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi_version</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>1</div></td></tr><tr><td><div>0</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">extension</td><td style="vertical-align:top;">:</td><td><div>html</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">folder</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">function</td><td style="vertical-align:top;">:</td><td><div>add</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">global_settings</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">app_folders</td><td style="vertical-align:top;">:</td><td><div>set([&#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\admin\\\\&#x27;, &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\P2P\\\\&#x27;, &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\welcome\\\\&#x27;])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">applications_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_args</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cmd_options</td><td style="vertical-align:top;">:</td><td><div>&lt;Values at 0x1ab46c0: {&#x27;verbose&#x27;: False, &#x27;ip&#x27;: &#x27;127.0.0.1&#x27;, &#x27;debuglevel&#x27;: 30, &#x27;with_scheduler&#x27;: False, &#x27;ips&#x27;: [&#x27;192.168.1.18&#x27;, &#x27;fe80::6c2f:855d:fcb0:2777%9&#x27;, &#x27;2001:0:5ef5:79fd:1416:190b:5616:f67a&#x27;, &#x27;fe80::1416:190b:5616:f67a%8&#x27;], &#x27;shutdown_timeout&#x27;: 5, &#x27;taskbar&#x27;: False, &#x27;with_coverage&#x27;: False, &#x27;scheduler_groups&#x27;: None, &#x27;port&#x27;: 8000, &#x27;maxthreads&#x27;: None, &#x27;softcron&#x27;: False, &#x27;server_name&#x27;: &#x27;Kevin-VAIO&#x27;, &#x27;bpython&#x27;: False, &#x27;nogui&#x27;: False, &#x27;pid_filename&#x27;: &#x27;httpserver.pid&#x27;, &#x27;print_errors&#x27;: False, &#x27;extcron&#x27;: False, &#x27;runcron&#x27;: False, &#x27;run_system_tests&#x27;: False, &#x27;test&#x27;: None, &#x27;folder&#x27;: &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py&#x27;, &#x27;config&#x27;: &#x27;&#x27;, &#x27;minthreads&#x27;: None, &#x27;shell&#x27;: None, &#x27;run&#x27;: &#x27;&#x27;, &#x27;log_filename&#x27;: &#x27;httpserver.log&#x27;, &#x27;profiler_dir&#x27;: None, &#x27;args&#x27;: [&#x27;&#x27;], &#x27;socket_timeout&#x27;: 5, &#x27;ssl_ca_certificate&#x27;: None, &#x27;scheduler&#x27;: None, &#x27;interfaces&#x27;: None, &#x27;ssl_private_key&#x27;: &#x27;&#x27;, &#x27;gae&#x27;: None, &#x27;password&#x27;: &#x27;&lt;ask&gt;&#x27;, &#x27;request_queue_size&#x27;: 5, &#x27;ssl_certificate&#x27;: &#x27;&#x27;, &#x27;cronjob&#x27;: False, &#x27;numthreads&#x27;: None, &#x27;quiet&#x27;: False, &#x27;import_models&#x27;: False, &#x27;timeout&#x27;: 10, &#x27;plain&#x27;: False, &#x27;nobanner&#x27;: False}&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">db_sessions</td><td style="vertical-align:top;">:</td><td><div>set([])</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">debugging</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">gluon_parent</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_jython</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_pypy</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_source</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">local_hosts</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>192.168.1.18</div></td></tr><tr><td><div>::ffff:127.0.0.1</div></td></tr><tr><td><div>::1</div></td></tr><tr><td><div>fe80::6c2f:855d:fcb0:2777%9</div></td></tr><tr><td><div>Kevin-VAIO</div></td></tr><tr><td><div>2001:0:5ef5:79fd:1416:190b:5616:f67a</div></td></tr><tr><td><div>fe80::1416:190b:5616:f67a%8</div></td></tr><tr><td><div>127.0.0.1</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">web2py_version</td><td style="vertical-align:top;">:</td><td><div>2.13.4-stable+timestamp.2015.12.26.04.59.39</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_https</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_local</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_restful</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_scheduler</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">is_shell</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">now</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 2, 22, 21, 41, 3, 664000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_args</td><td style="vertical-align:top;">:</td><td><div>22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">raw_extension</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">url</td><td style="vertical-align:top;">:</td><td><div>/P2P/default/add/22</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">utcnow</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 2, 23, 5, 41, 3, 664000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">wsgi</td><td style="vertical-align:top;">:</td><td><div>&lt;gluon.main.LazyWSGI object at 0x08C40A70&gt;</div></td></tr></table></div>'
+tRp66
+sS'frames'
+p67
+(lp68
+(dp69
+S'file'
+p70
+S'C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\restricted.py'
+p71
+sS'dump'
+p72
+(dp73
+S'environment'
+p74
+S"{'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}"
+p75
+sS'ccode'
+p76
+S'<code object <module> at 04AB2140, file "C:\\User...pplications\\P2P\\controllers/default.py", line 10>'
+p77
+ssS'lnum'
+p78
+I227
+sS'lines'
+p79
+(dp80
+I224
+S'            ccode = code'
+p81
+sI225
+S'        else:'
+p82
+sI226
+S'            ccode = compile2(code, layer)'
+p83
+sI227
+S'        exec ccode in environment'
+p84
+sI228
+S'    except HTTP:'
+p85
+sI229
+S'        raise'
+p86
+sI230
+S'    except RestrictedError:'
+p87
+sI231
+S'        # do not encapsulate (obfuscate) the original RestrictedError'
+p88
+sI222
+S'    try:'
+p89
+sI223
+S'        if isinstance(code, types.CodeType):'
+p90
+ssS'call'
+p91
+S"(code='# -*- coding: utf-8 -*-\\n# this file is released ...n locals()\\n\\nresponse._vars=response._caller(add)\\n', environment={'A': <class 'gluon.html.A'>, 'ANY_OF': <class 'gluon.validators.ANY_OF'>, 'ASSIGNJS': <function ASSIGNJS>, 'AppConfig': <function AppConfig>, 'Auth': <class 'gluon.tools.Auth'>, 'B': <class 'gluon.html.B'>, 'BEAUTIFY': <class 'gluon.html.BEAUTIFY'>, 'BODY': <class 'gluon.html.BODY'>, 'BR': <class 'gluon.html.BR'>, 'BUTTON': <class 'gluon.html.BUTTON'>, ...}, layer=r'C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers/default.py')"
+p92
+sS'func'
+p93
+S'restricted'
+p94
+sa(dp95
+g70
+S'C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers\\default.py'
+p96
+sg72
+(dp97
+sg78
+I300
+sg79
+(dp98
+I289
+S"        redirect(URL('poem', args=poem.id))"
+p99
+sI290
+S'    return locals()'
+p100
+sI291
+S''
+sI292
+S'@auth.requires_login()'
+p101
+sI293
+S'def profile():'
+p102
+sI294
+S'    user = auth.user'
+p103
+sI295
+S'    poem = db.poem'
+p104
+sI296
+S'    poems_owned = db(db.poem.author == user.id).select()'
+p105
+sI297
+S'    poems_contributed = db((db.newline.author == user.id) & (db.poem.id == db.newline.poem_id)).select(groupby=db.poem.id)'
+p106
+sI298
+S'    return locals()'
+p107
+ssg91
+S'()'
+p108
+sg93
+S'<module>'
+p109
+sa(dp110
+g70
+S'C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\globals.py'
+p111
+sg72
+(dp112
+S'self'
+p113
+S'undefined'
+p114
+sS'f'
+S'<function add>'
+p115
+ssg78
+I412
+sg79
+(dp116
+I416
+S"        self.generic_patterns = ['*']"
+p117
+sI407
+S"        self.flash = ''            # used by the default view layout"
+p118
+sI408
+S'        self.meta = Storage()      # used by web2py_ajax.html'
+p119
+sI409
+S'        self.menu = []             # used by the default view layout'
+p120
+sI410
+S'        self.files = []            # used by web2py_ajax.html'
+p121
+sI411
+S'        self._vars = None'
+p122
+sI412
+S'        self._caller = lambda f: f()'
+p123
+sI413
+S'        self._view_environment = None'
+p124
+sI414
+S'        self._custom_commit = None'
+p125
+sI415
+S'        self._custom_rollback = None'
+p126
+ssg91
+S'(f=<function add>)'
+p127
+sg93
+S'<lambda>'
+p128
+sa(dp129
+g70
+S'C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\tools.py'
+p130
+sg72
+(dp131
+S'action'
+p132
+S'<function add>'
+p133
+sS'a'
+S'()'
+p134
+sS'b'
+g21
+ssg78
+I4236
+sg79
+(dp135
+I4231
+S'                    flag = condition'
+p136
+sI4232
+S'                if not flag:'
+p137
+sI4233
+S'                    current.session.flash = self.messages.access_denied'
+p138
+sI4234
+S'                    return call_or_redirect('
+p139
+sI4235
+S'                        self.settings.on_failed_authorization)'
+p140
+sI4236
+S'                return action(*a, **b)'
+p141
+sI4237
+S'            f.__doc__ = action.__doc__'
+p142
+sI4238
+S'            f.__name__ = action.__name__'
+p143
+sI4239
+S'            f.__dict__.update(action.__dict__)'
+p144
+sI4240
+S'            return f'
+p145
+ssg91
+S'(*a=(), **b={})'
+p146
+sg93
+S'f'
+sa(dp147
+g70
+S'C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers\\default.py'
+p148
+sg72
+(dp149
+S'builtinstr'
+p150
+S"<type 'str'>"
+p151
+sS'entry'
+p152
+S"{u'flags': u'', u'freq': 18, u'score': 120, u'syllables': u'1', u'word': u'm\\xeame'}"
+p153
+sS'word'
+p154
+S"'mum'"
+p155
+ssg78
+I204
+sg79
+(dp156
+I199
+S'    parsed_json = simplejson.loads(result)'
+p157
+sI200
+S''
+sI201
+S'    sorted_syllables = [[] for x in range(11)]'
+p158
+sI202
+S'    for entry in parsed_json:'
+p159
+sI203
+S"        syllable_count = int(entry['syllables'])"
+p160
+sI204
+S"        word = str(entry['word'])"
+p161
+sI205
+S'        sorted_syllables[syllable_count].append(word)'
+p162
+sI206
+S'    # Create SQLFORM for the user to add a single line as a String'
+p163
+sI207
+S"    form = SQLFORM(db.newline, fields=['line'])"
+p164
+sI208
+S'    form.vars.poem_id = poem.id'
+p165
+ssg91
+S'()'
+p166
+sg93
+S'add'
+p167
+sasS'pyver'
+p168
+S'Python 2.7.9: C:\\Users\\Kevin\\Desktop\\web2py\\web2py.exe (prefix: )'
+p169
+sS'session'
+p170
+g65
+(S'ss\t\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">auth</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">expiration</td><td style="vertical-align:top;">:</td><td><div>3600</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">hmac_key</td><td style="vertical-align:top;">:</td><td><div>0fdedfdd-c08a-418d-ba4e-2b15acd2d7f6</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_visit</td><td style="vertical-align:top;">:</td><td><div>datetime.datetime(2016, 2, 22, 21, 40, 8, 724000)</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">remember_me</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">user</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">email</td><td style="vertical-align:top;">:</td><td><div>default@email.com</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">first_name</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">id</td><td style="vertical-align:top;">:</td><td><div>4L</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">last_name</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">registration_id</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">registration_key</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">reset_password_key</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">username</td><td style="vertical-align:top;">:</td><td><div>default</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">user_groups</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">4</td><td style="vertical-align:top;">:</td><td><div>user_4</div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr></table></div>'
+tRp171
+sS'etype'
+p172
+S"<type 'exceptions.UnicodeEncodeError'>"
+p173
+sS'date'
+p174
+S'Mon Feb 22 21:41:04 2016'
+p175
+sS'response'
+p176
+g65
+(S'sP)\x00\x00<div><table><tr><td style="font-weight:bold;vertical-align:top;">body</td><td style="vertical-align:top;">:</td><td><div>&lt;cStringIO.StringO object at 0x08C400A0&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">cookies</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">session_id_p2p</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91<table><tr><td style="font-weight:bold;vertical-align:top;">comment</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">domain</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">expires</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">httponly</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">max-age</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">path</td><td style="vertical-align:top;">:</td><td><div>/</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">secure</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">version</td><td style="vertical-align:top;">:</td><td><div></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">delimiters</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>{{</div></td></tr><tr><td><div>}}</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">files</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">flash</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">form_label_separator</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">formstyle</td><td style="vertical-align:top;">:</td><td><div>bootstrap3_inline</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generic_patterns</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>*</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">google_analytics_id</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">headers</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">X-Powered-By</td><td style="vertical-align:top;">:</td><td><div>web2py</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">logo</td><td style="vertical-align:top;">:</td><td><div><a class="navbar-brand" href="index" id="web2py-logo"><b>web<span>2</span>py</b>&trade;&nbsp;</a></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">menu</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div><table><tr><td><div>Home</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/P2P/default/index</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Browse Poems</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/P2P/default/browse</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Search Poems</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/P2P/default/search</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Profile</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/P2P/default/profile</div></td></tr><tr><td><div><table></table></div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>My Sites</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/site</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>This App</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>#</div></td></tr><tr><td><div><table><tr><td><div><table><tr><td><div>Design</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/design/P2P</div></td></tr></table></div></td></tr><tr><td><div><li class="divider"></li></div></td></tr><tr><td><div><table><tr><td><div>Controller</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/controllers/default.py</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>View</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/views/default/add.html</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>DB Model</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/models/db.py</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Menu Model</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/models/menu.py</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Config.ini</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/private/appconfig.ini</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Layout</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/views/layout.html</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Stylesheet</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/edit/P2P/static/css/web2py-bootstrap3.css</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Database</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/P2P/appadmin/index</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>Errors</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/errors/P2P</div></td></tr></table></div></td></tr><tr><td><div><table><tr><td><div>About</div></td></tr><tr><td><div>False</div></td></tr><tr><td><div>/admin/default/about/P2P</div></td></tr></table></div></td></tr></table></div></td></tr></table></div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">meta</td><td style="vertical-align:top;">:</td><td><div><table><tr><td style="font-weight:bold;vertical-align:top;">author</td><td style="vertical-align:top;">:</td><td><div>Your Name &lt;you@example.com&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">description</td><td style="vertical-align:top;">:</td><td><div>a cool new app</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">generator</td><td style="vertical-align:top;">:</td><td><div>Web2py Web Framework</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">keywords</td><td style="vertical-align:top;">:</td><td><div>web2py, python, framework</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">models_to_run</td><td style="vertical-align:top;">:</td><td><div><table><tr><td><div>^\\w+\\.py$</div></td></tr><tr><td><div>^default/\\w+\\.py$</div></td></tr><tr><td><div>^default/add/\\w+\\.py$</div></td></tr></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">postprocessing</td><td style="vertical-align:top;">:</td><td><div><table></table></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_client</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_compression_level</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_expires</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_cookie_key</td><td style="vertical-align:top;">:</td><td><div>None</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_data_name</td><td style="vertical-align:top;">:</td><td><div>session_data_p2p</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_file</td><td style="vertical-align:top;">:</td><td><div>&lt;open file &#x27;C:\\\\Users\\\\Kevin\\\\Desktop\\\\web2py\\\\applications\\\\P2P\\\\sessions\\\\18c\\\\168\\\\127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91&#x27;, mode &#x27;rb+&#x27; at 0x04AA1C80&gt;</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_filename</td><td style="vertical-align:top;">:</td><td><div>C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\sessions\\127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_hash</td><td style="vertical-align:top;">:</td><td><div>76d8e519b602c28bde73c57d050de04d</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id</td><td style="vertical-align:top;">:</td><td><div>127.0.0.1-9742406a-19eb-4317-9716-a20b123f3c91</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_id_name</td><td style="vertical-align:top;">:</td><td><div>session_id_p2p</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_locked</td><td style="vertical-align:top;">:</td><td><div>True</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_masterapp</td><td style="vertical-align:top;">:</td><td><div>P2P</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_new</td><td style="vertical-align:top;">:</td><td><div>False</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">session_storage_type</td><td style="vertical-align:top;">:</td><td><div>file</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">status</td><td style="vertical-align:top;">:</td><td><div>200</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">subtitle</td><td style="vertical-align:top;">:</td><td><div></div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">title</td><td style="vertical-align:top;">:</td><td><div>P2P</div></td></tr><tr><td style="font-weight:bold;vertical-align:top;">view</td><td style="vertical-align:top;">:</td><td><div>default/add.html</div></td></tr></table></div>'
+tRp177
+sS'locals'
+p178
+(dp179
+S'poem'
+p180
+S"<Row {'body': 'Roses are Red\\r\\nViolets are Blue... It is like the best thing that was ever made.'}>"
+p181
+sS'rows'
+p182
+S'<Rows (5)>'
+p183
+sS'word'
+p184
+S"'mum'"
+p185
+sS'sorted_syllables'
+p186
+S"[[], ['wan', 'don', 'non', 'con', 'yon', 'hon', 'bon', 'han', 'schon', 'swan', 'bonne', 'khan', 'sonne', 'john', 'spawn', 'com', 'calm', 'bomb', 'palm', 'mom', ...], ['vpon', 'upon', 'yuan', 'salon', 'baton', 'npon', 'chiffon', 'pecan', 'lasagne', 'forgone', 'trimaran', 'frogspawn', 'iamb', 'aplomb', 'embalm', 'salaam', 'becalm', 'pogrom', 'consomme', 'alarm', ...], ['aileron', 'whereupon', 'echelon', 'amazon', 'autobahn', 'neocon', 'thereupon', 'polygon', 'denouement', 'pantheon', 'marathon', 'octagon', 'paragon', 'hereupon', 'antiphon', 'epsilon', 'tarragon', 'carillon', 'upsilon', 'lexicon', ...], ['automaton', 'emoticon', 'phenomenon', 'pantechnicon', 'catamaran', 'nurseryman', 'radioman', 'newspaperman', 'assemblyman'], [], [], [], [], [], []]"
+p187
+sS'simplejson'
+p188
+S"<module 'gluon.contrib.simplejson' from 'C:\\User...top\\web2py\\gluon\\contrib\\simplejson\\__init__.py'>"
+p189
+sS'parsed_json'
+p190
+S"[{u'flags': u'bc', u'freq': 19, u'score': 300, u'syllables': u'1', u'word': u'wan'}, {u'flags': u'bc', u'freq': 26, u'score': 300, u'syllables': u'1', u'word': u'don'}, {u'flags': u'c', u'freq': 25, u'score': 300, u'syllables': u'1', u'word': u'non'}, {u'flags': u'bc', u'freq': 22, u'score': 300, u'syllables': u'1', u'word': u'con'}, {u'flags': u'bc', u'freq': 20, u'score': 300, u'syllables': u'1', u'word': u'yon'}, {u'flags': u'bc', u'freq': 19, u'score': 300, u'syllables': u'1', u'word': u'hon'}, {u'flags': u'c', u'freq': 18, u'score': 300, u'syllables': u'1', u'word': u'bon'}, {u'flags': u'c', u'freq': 18, u'score': 300, u'syllables': u'1', u'word': u'han'}, {u'flags': u'c', u'freq': 18, u'score': 300, u'syllables': u'1', u'word': u'schon'}, {u'flags': u'bc', u'freq': 18, u'score': 300, u'syllables': u'1', u'word': u'swan'}, {u'flags': u'c', u'freq': 17, u'score': 300, u'syllables': u'1', u'word': u'bonne'}, {u'flags': u'bc', u'freq': 17, u'score': 300, u'syllables': u'1', u'word': u'khan'}, {u'flags': u'c', u'freq': 17, u'score': 300, u'syllables': u'1', u'word': u'sonne'}, {u'flags': u'', u'freq': 17, u'score': 300, u'syllables': u'2', u'word': u'vpon'}, {u'flags': u'bc', u'freq': 15, u'score': 300, u'syllables': u'1', u'word': u'john'}, {u'flags': u'bc', u'freq': 27, u'score': 300, u'syllables': u'2', u'word': u'upon'}, {u'flags': u'bc', u'freq': 18, u'score': 300, u'syllables': u'1', u'word': u'spawn'}, {u'flags': u'bc', u'freq': 18, u'score': 300, u'syllables': u'2', u'word': u'yuan'}, {u'flags': u'bc', u'freq': 19, u'score': 300, u'syllables': u'2', u'word': u'salon'}, {u'flags': u'bc', u'freq': 18, u'score': 300, u'syllables': u'2', u'word': u'baton'}, ...]"
+p191
+sS'url'
+p192
+S"'http://rhymebrain.com/talk'"
+p193
+sS'url_values'
+p194
+S"'function=getRhymes&word=Juan'"
+p195
+sS'urllib2'
+p196
+S"<module 'urllib2' from 'C:\\Users\\Kevin\\Desktop\\web2py\\library.zip\\urllib2.pyc'>"
+p197
+sS'urllib'
+p198
+S"<module 'urllib' from 'C:\\Users\\Kevin\\Desktop\\web2py\\library.zip\\urllib.pyc'>"
+p199
+sS'full_url'
+p200
+S"'http://rhymebrain.com/talk?function=getRhymes&word=Juan'"
+p201
+sS'rhyme_line'
+p202
+S"<Row {'line_number': 6L, 'author': 3L, 'id': 28L...ted': datetime.datetime(2016, 2, 22, 5, 18, 14)}>"
+p203
+sS'result'
+p204
+S'\'[ {"word":"wan","freq":19,"score":300,"flags":"b...req":14,"score":84,"flags":"b","syllables":"1"}]\\n\''
+p205
+sS'rhyme_word'
+p206
+S"'Juan'"
+p207
+sS'entry'
+p208
+S"{u'flags': u'', u'freq': 18, u'score': 120, u'syllables': u'1', u'word': u'm\\xeame'}"
+p209
+sS'x'
+S'10'
+p210
+sS'data'
+p211
+S'<addinfourl at 146892640 whose fp = <socket._fileobject object>>'
+p212
+sS'syllable_count'
+p213
+S'1'
+sssS'traceback'
+p214
+S'Traceback (most recent call last):\n  File "C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\restricted.py", line 227, in restricted\n    exec ccode in environment\n  File "C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers/default.py", line 300, in <module>\n  File "C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\globals.py", line 412, in <lambda>\n    self._caller = lambda f: f()\n  File "C:\\Users\\Kevin\\Desktop\\web2py\\gluon\\tools.py", line 4236, in f\n    return action(*a, **b)\n  File "C:\\Users\\Kevin\\Desktop\\web2py\\applications\\P2P\\controllers/default.py", line 204, in add\n    word = str(entry[\'word\'])\nUnicodeEncodeError: \'ascii\' codec can\'t encode character u\'\\xea\' in position 1: ordinal not in range(128)\n'
+p215
+s.

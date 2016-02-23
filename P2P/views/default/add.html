@@ -1,23 +1,31 @@
 {{extend 'layout.html'}}
-<center>
-<h2>{{=poem.title}}</h2>
-{{addRhyme = False}}
+<input type=button style = "position:relative;" align = "left" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
+
+<h1 align = "center"><i>{{=poem.title}}</i></h1>
 </br>
 <center>
+
 <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
-<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></center>
+<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
+<center>
+<h4>
 Author: {{=db.auth_user(poem.author).username}}
-</br>
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
+</h4>
+{{addRhyme = False}}
+
 {{if (poem.line_count+1) % 4 == 1 or (poem.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
 {{if addRhyme == False:}}
 <h2>Add a line to this poem</h2>
+<h4>
+    Enter a line below. Use our rhyming API to help you rhyme with the last word
+</h4>
 {{elif addRhyme == True:}}
 <h2>Add a line to this poem</h2>
-<h2>Start a New Rhyme</h2>
+<h3>Start a New Rhyme</h3>
+<h4>
+   If you are entering a line for a new stanza enter any words for the next user to rhyme with.
+</h4>
 {{pass}}
-
-
 
 {{=form}}
 

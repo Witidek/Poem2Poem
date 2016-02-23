@@ -87,7 +87,7 @@ def edit():
         redirect(URL('poem',args=poem.id))
 
     # Create SQLFORM
-    form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
+    form = SQLFORM(db.poem, record=poem, fields=['title','body','description']).process()
     lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
     lines_form = []
     line_form = []
@@ -201,7 +201,7 @@ def add():
     sorted_syllables = [[] for x in range(11)]
     for entry in parsed_json:
         syllable_count = int(entry['syllables'])
-        word = str(entry['word'])
+        word = str(entry['word'].encode('utf-8',"ignore"))
         sorted_syllables[syllable_count].append(word)
     # Create SQLFORM for the user to add a single line as a String
     form = SQLFORM(db.newline, fields=['line'])
@@ -275,7 +275,7 @@ def specialadd():
     sorted_syllables = [[] for x in range(11)]
     for entry in parsed_json:
         syllable_count = int(entry['syllables'])
-        word = str(entry['word'])
+        word = str(entry['word'].encode('utf-8',"ignore"))
         sorted_syllables[syllable_count].append(word)
     # Create SQLFORM for the user to add a single line as a String
     form = FORM(INPUT(_name = "line"),

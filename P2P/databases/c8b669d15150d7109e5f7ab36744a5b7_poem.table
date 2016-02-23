@@ -95,7 +95,7 @@ sS'type'
 p31
 S'datetime'
 p32
-ssS'id'
+ssS'date_posted'
 p33
 (dp34
 g4
@@ -103,14 +103,14 @@ I512
 sg5
 I00
 sg6
-I1
+I6
 sg7
-S'INTEGER PRIMARY KEY AUTOINCREMENT'
+S'TIMESTAMP'
 p35
 sg9
 I00
 sg10
-S'id'
+S'datetime'
 p36
 ssS'user_editing'
 p37
@@ -162,7 +162,7 @@ sg9
 I00
 sg10
 g18
-ssS'date_posted'
+ssS'id'
 p48
 (dp49
 g4
@@ -170,13 +170,13 @@ I512
 sg5
 I00
 sg6
-I6
+I1
 sg7
-S'TIMESTAMP'
+S'INTEGER PRIMARY KEY AUTOINCREMENT'
 p50
 sg9
 I00
 sg10
-S'datetime'
+S'id'
 p51
 ss.
