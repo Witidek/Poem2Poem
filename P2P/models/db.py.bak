@@ -89,9 +89,9 @@ auth.settings.reset_password_requires_verification = True
 #########################################################################
 
 db.define_table('poem',
-                Field('title', 'string', requires=IS_NOT_EMPTY()),
+                Field('title', 'string', requires=[IS_NOT_EMPTY(),IS_LENGTH(50)]),
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
-                Field('description', 'text'),
+                Field('description', 'text',requires=IS_LENGTH(200) ),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
                 Field('category', requires = IS_IN_SET(['16 line ABAB rhyme', 'Haiku']), default = '16 line ABAB rhyme'),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ))
@@ -99,21 +99,22 @@ db.poem.id.readable = False
 
 db.define_table('abab',
                 Field('poem_id', db.poem, readable=False, writable=False),
-                Field('body', 'text', requires = IS_MATCH('^\D+\n{1}\D+[^\n]$', error_message = 'Please enter only two lines in the form of "line (ENTER) line"')),
+                Field('body', 'text', requires = [IS_MATCH('^\D+\n{1}\D+[^\n]$', error_message = 'Please enter only two lines in the form of "line (ENTER) line"'),IS_LENGTH(100)]),
                 Field('line_count', 'integer', default=2, writable=False))
 
 db.define_table('haiku',
                 Field('poem_id', db.poem, readable=False, writable=False),
-                Field('start_haiku', 'string'),
+                Field('start_haiku', 'string', requires = IS_NOT_EMPTY()),
                 Field('word_count', 'integer'),
                 Field('syllable_count', 'integer'),
-                Field('body_syllable_count', 'integer'))
+                Field('body_syllable_count', 'integer'),
+                Field('line_count', 'integer', default=1, writable=False))
 
 db.define_table('new_line',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
                 Field('line_number', 'integer', readable=True),
-                Field('line', 'string'),
+                Field('line', 'string',requires = [IS_NOT_EMPTY(), IS_LENGTH(50)]),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))))
 
 db.define_table('new_word',
@@ -122,6 +123,7 @@ db.define_table('new_word',
                 Field('word_number', 'integer', readable=True),
                 Field('word', 'string', requires = IS_MATCH('^[A-z]+$', error_message='Only one word allowed, no symbols, numbers, or spaces!')),
                 Field('syllables', 'integer'),
+                Field('line_count', 'integer', default=1, writable=False),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))))
 
 db.define_table('permission',

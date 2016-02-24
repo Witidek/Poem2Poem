@@ -33,20 +33,20 @@
         <div class = "col-md-4" align="middle">
             <img src="/P2P/static/images/browse.png" height="75">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('browse')}}'" value ='Browse Poems'>
+            <input type=button style = "position:absolute;" onClick="location.href='{{=URL('browse')}}'" value ='Browse Poems'>
         </div>
 
         <div class = "col-md-4" align="middle">
             <img src="/P2P/static/images/start.png" height="75">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create')}}'" value ='Create a Poem'>
+            <input type=button style = "position:absolute;" onClick="location.href='{{=URL('pick')}}'" value ='Create a Poem'>
         </div>
 
 
         <div class = "col-md-4" align="middle">
             <img src="/P2P/static/images/profile.png" height="75">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('profile')}}'" value ='View Profile'>
+            <input type=button style = "position:absolute;" onClick="location.href='{{=URL('profile')}}'" value ='View Profile'>
         </div>
     </div>
 

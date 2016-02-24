@@ -95,7 +95,7 @@ def create():
             redirect(URL('poem', args=id))
     # Create form for haiku
     elif request.args(0) == 'haiku':
-        form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process()
+        form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_haiku_check)
         form.vars.category = 'Haiku'
         if form.accepted:
             word_list = str(form.vars.start_haiku).split(' ')
@@ -117,6 +117,16 @@ def create():
     else:
         redirect(URL('browse'))
     return locals()
+
+def create_haiku_check (form):
+
+    word_list = str(form.vars.start_haiku).split(' ')
+    word_count = len(word_list)
+    syllable_count = 0
+    for word in word_list:
+        syllable_count += count_syllables(word)
+        if syllable_count > 5:
+            form.errors.start_haiku = 'Too many Syllables (5 Max)'
 
 @auth.requires_login()
 def edit():
@@ -298,12 +308,16 @@ def add():
         form = SQLFORM(db.new_word, fields=['word'])
         form.vars.poem_id = poem.id
         form.vars.word_number = haiku.word_count + 1
+        syllables_left = 0
         if haiku.syllable_count < 5:
             form.vars.line_count = 1
+            syllables_left = 5 - haiku.syllable_count
         elif 5 <= haiku.syllable_count <=11:
             form.vars.line_count = 2
+            syllables_left = 12 - haiku.syllable_count
         elif 11 < haiku.syllable_count:
             form.vars.line_count = 3
+            syllables_left = 17 - haiku.syllable_count
 
         form.process(onvalidation = add_haiku_check)
         if form.accepted:
