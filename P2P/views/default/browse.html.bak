@@ -34,29 +34,37 @@ table#t01 th	{
 }
 </style>
 </head>
-<table class="table" id= "t01">
-
+<table class="tablesorter" id= "t01">
+    <thead>
     <tr>
         <th>Title</th>
         <th>Author</th>
+        <th>Poem Type</th>
         <th>Description</th>
         <th>Permission to add line</th>
     </tr>
+    </thead>
+    <tbody>
     {{for row in rows:}}
     <tr>
         <td><a href="{{=URL('poem',args=row.id)}}" style="color: #008fb3"><b>{{=row.title}}</b></td>
         <td>{{=db.auth_user(row.author).username}}</td>
-        <td>{{if row.description:}}
-                {{=row.description[0:30]}}
-                {{if len(row.description) > 30:}}
-                    ...
-                {{pass}}
-            {{else:}}
-                None
-            {{pass}}</td>
+        <td>{{=row.category}}</td>
+        <td>{{if row.description:}}{{=row.description[0:30]}}{{if len(row.description) > 30:}}...{{pass}}{{else:}}None{{pass}}</td>
         <td>{{=row.permission}}</td>
     </tr>
     {{pass}}
+    </tbody>
 </table>
 
 <input type=button  style = "position:relative;"  onClick="location.href='/P2P/default/create'" value='Create new poem'>
+
+<script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
+<script type="text/javascript">
+$(document).ready(function()
+    {
+        $("#t01").tablesorter();
+    }
+);
+</script>

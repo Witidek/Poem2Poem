@@ -2,7 +2,7 @@
 <h1>
 Username: {{=user.username}}
 </h1>
-<table class = "table">
+<table class = "table" id="owned_table">
     <tr>
         <th>Poems Owned</th>
         <th>Date Posted</th>
@@ -29,7 +29,7 @@ Username: {{=user.username}}
 </table>
 <br>
 <br>
-<table class = "table">
+<table class = "table" id = "contributed_table">
     <tr>
         <th>Poems Contributed </th>
         <th>Date Posted</th>
@@ -41,3 +41,14 @@ Username: {{=user.username}}
         </tr>
         {{pass}}
 </table>
+
+<script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
+<script type="text/javascript">
+$(document).ready(function()
+    {
+        $("#owned_table").tablesorter();
+        $("#contributed_table").tablesorter();
+    }
+);
+</script>

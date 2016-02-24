@@ -34,8 +34,8 @@ table#t01 th	{
 }
 </style>
 </head>
-<table class="table" id= "t01">
-
+<table class="tablesorter" id= "t01">
+    <thead>
     <tr>
         <th>Title</th>
         <th>Author</th>
@@ -43,6 +43,8 @@ table#t01 th	{
         <th>Description</th>
         <th>Permission to add line</th>
     </tr>
+    </thead>
+    <tbody>
     {{for row in rows:}}
     <tr>
         <td><a href="{{=URL('poem',args=row.id)}}" style="color: #008fb3"><b>{{=row.title}}</b></td>
@@ -52,6 +54,20 @@ table#t01 th	{
         <td>{{=row.permission}}</td>
     </tr>
     {{pass}}
+    </tbody>
 </table>
 
 <input type=button  style = "position:relative;"  onClick="location.href='/P2P/default/create'" value='Create new poem'>
+
+<script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
+<script type="text/javascript">
+$(document).ready(function()
+    {
+        $("#t01").tablesorter({
+            // sort on the first column and third column, order asc 
+            sortList: [[0,0]]
+        });
+    }
+);
+</script>
