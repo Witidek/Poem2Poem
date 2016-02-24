@@ -5,12 +5,12 @@
 </br>
 {{if poem.category == '16 line ABAB rhyme':}}
 <center>
-<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
-<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
+<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=abab.body.splitlines()[0]}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{=abab.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
 
 {{elif poem.category == 'Haiku':}}
 <center>
-    <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"> {{=poem.body}}</a>{{if words:}}{{for word in words:}}{{if word.word == '':}}<a href="{{=URL('specialadd',args= (poem.id,word.word_number))}}" style="color: #ff0000">Add Word{{pass}}</a>{{if (word.line_count == 2) and (line2 == True):}}</br><div class = "left"><font color = "#9900ff"><b>2  | </b></font></div>{{line2 = False}}{{pass}}{{if (word.line_count == 3) and (line3 == True):}}</br><div class = "left"><font color = "#9900ff"><b>3  | </b></font></div>{{line3 = False}}{{pass}}<a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}} </a>{{pass}}{{pass}}</font></div></pre></div></center>
+    <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"> {{=haiku.start_haiku}}</a>{{if words:}}{{for word in words:}}{{if word.word == '':}}<a href="{{=URL('specialadd',args= (poem.id,word.word_number))}}" style="color: #ff0000">Add Word{{pass}}</a>{{if (word.line_count == 2) and (line2 == True):}}</br><div class = "left"><font color = "#9900ff"><b>2  | </b></font></div>{{line2 = False}}{{pass}}{{if (word.line_count == 3) and (line3 == True):}}</br><div class = "left"><font color = "#9900ff"><b>3  | </b></font></div>{{line3 = False}}{{pass}}<a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}} </a>{{pass}}{{pass}}</font></div></pre></div></center>
 {{pass}}
 <center>
 <h4>
@@ -20,7 +20,7 @@ Author: {{=db.auth_user(poem.author).username}}
 {{if poem.category == '16 line ABAB rhyme':}}
     {{addRhyme = False}}
 
-    {{if (rows.line_count+1) % 4 == 1 or (rows.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
+    {{if (abab.line_count+1) % 4 == 1 or (abab.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
     {{if addRhyme == False:}}
     <h2>Add a line to this poem</h2>
     <h4>

@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 <h2>Browse Poems</h2>
 <h4 align="right" >
-    <input type=button  onClick="location.href='/P2P/default/search'"   value='Search'>
+    <input type=button  onClick="location.href='{{=URL('search')}}'" value='Search'>
 </h4>
 <h4>
     Here you can see all the poems that have been made by our current user.</br>
@@ -57,17 +57,14 @@ table#t01 th	{
     </tbody>
 </table>
 
-<input type=button  style = "position:relative;"  onClick="location.href='/P2P/default/create'" value='Create new poem'>
+<input type=button  style = "position:relative;"  onClick="location.href='{{=URL('pick')}}'" value='Create new poem'>
 
 <script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
 <script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
 <script type="text/javascript">
 $(document).ready(function()
     {
-        $("#t01").tablesorter({
-            // sort on the first column and third column, order asc 
-            sortList: [[0,0]]
-        });
+        $("#t01").tablesorter();
     }
 );
 </script>

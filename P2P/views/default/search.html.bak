@@ -22,6 +22,10 @@ table#t01 tr:nth-child(odd) {
    background-color:#fff;
     color: black;
 }
+table#t01 th	{
+    background-color: #00284d;
+    color: white;
+}
 </style>
 </head>
 

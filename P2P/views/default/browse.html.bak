@@ -57,7 +57,7 @@ table#t01 th	{
     </tbody>
 </table>
 
-<input type=button  style = "position:relative;"  onClick="location.href='/P2P/default/create'" value='Create new poem'>
+<input type=button  style = "position:relative;"  onClick="location.href='{{URL('pick')}}'" value='Create new poem'>
 
 <script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
 <script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>

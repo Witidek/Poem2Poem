@@ -24,7 +24,7 @@
         <div class = "col-md-6" align="middle">
             <img src="/P2P/static/images/haiku.jpg" width="140" height="75">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create')}}'" value ='Haiku'>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create_haiku')}}'" value ='Haiku'>
         </div>
 
     </div>

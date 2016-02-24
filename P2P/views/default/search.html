@@ -63,3 +63,13 @@ table#t01 th	{
         {{pass}}
     {{pass}}
 </table>
+
+<script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
+<script type="text/javascript">
+$(document).ready(function()
+    {
+        $("#t01").tablesorter();
+    }
+);
+</script>
