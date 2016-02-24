@@ -92,7 +92,6 @@ db.define_table('poem',
                 Field('title', 'string', requires=IS_NOT_EMPTY()),
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
                 Field('description', 'text'),
-                Field('body', 'text'),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
                 Field('category', requires = IS_IN_SET(['16 line ABAB rhyme', 'Haiku']), default = '16 line ABAB rhyme'),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ))
@@ -100,10 +99,12 @@ db.poem.id.readable = False
 
 db.define_table('abab',
                 Field('poem_id', db.poem, readable=False, writable=False),
+                Field('body', 'text', requires = IS_MATCH('^\D+\n{1}\D+[^\n]$', error_message = 'Please enter only two lines in the form of "line (ENTER) line"')),
                 Field('line_count', 'integer', default=2, writable=False))
 
 db.define_table('haiku',
                 Field('poem_id', db.poem, readable=False, writable=False),
+                Field('start_haiku', 'string'),
                 Field('word_count', 'integer'),
                 Field('syllable_count', 'integer'))
 

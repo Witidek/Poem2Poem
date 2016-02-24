@@ -75,18 +75,13 @@ def count_syllables(str):
     return int(parsed_json['syllables'])
 
 @auth.requires_login()
-def create():
+def create_haiku():
     # Create SQLFORM from db.poem
-    form = SQLFORM(db.poem).process()
+    form = SQLFORM.factory(db.poem, db.haiku).process()
     if form.accepted:
-        # Do an insert if ABAB
-        if form.vars.category == '16 line ABAB rhyme':
-            db.abab.insert(poem_id = form.vars.id, line_count = 2)
-        # Do an insert if Haiku
-        elif form.vars.category == 'Haiku':
-            word_count = len(str(form.vars.body).split(' '))
-            syllable_count = count_syllables(str(form.vars.body))
-            db.haiku.insert(poem_id = form.vars.id, word_count = word_count, syllable_count = syllable_count)
+        word_count = len(str(form.vars.start_haiku).split(' '))
+        syllable_count = count_syllables(str(form.vars.start_haiku))
+        db.haiku.insert(poem_id = form.vars.id, word_count = word_count, syllable_count = syllable_count)
 
         # Create new mutex for this poem
         db.mutex.insert(poem_id = form.vars.id, editing = False, edit_timestamp = request.now)
@@ -99,6 +94,23 @@ def create():
     return locals()
 
 @auth.requires_login()
+def create():
+    # Create SQLFORM from db.poem
+    form = SQLFORM.factory(db.poem, db.abab).process()
+    if form.accepted:
+        # Do an insert if ABAB
+        poem_id = db.abab.insert(**db.abab._filter_fields(form.vars))
+        db.abab.insert(poem_id = db.poem(poem_id), line_count = 2)
+        db.poem.insert(**db.poem._filter_fields(form.vars))
+        # Create new mutex for this poem
+        db.mutex.insert(poem_id = form.vars.id, editing = False, edit_timestamp = request.now)
+        # Create a new insert into permission table if poem was created Private (give owner permission)
+        if form.vars.permission == 'Private':
+            db.permission.insert(user_id = auth.user, poem_id = form.vars.id)
+        redirect(URL('poem', args=form.vars.id))
+    return locals()
+
+@auth.requires_login()
 def edit():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
@@ -106,7 +118,7 @@ def edit():
     # Load poem using the URL argument as poem id
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
-    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
+    rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
     # Redirect if current user is not owner of poem
     if poem.author != auth.user.id:
         session.flash = 'You are not the owner of this poem and cannot edit it'
@@ -210,9 +222,9 @@ def add():
         # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
         rhyme_word = ''
         if abab.line_count == 2:
-            rhyme_word = poem.body.splitlines()[0].split(' ')[-1]
+            rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
         elif abab.line_count == 3:
-            rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
+            rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
         else:
             rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count-1)).select().first()
             rhyme_word = rhyme_line.line.split(' ')[-1]
@@ -294,9 +306,9 @@ def specialadd():
     rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+2)).select().first()
     test = False
     if lineNumber-1 == 2:
-        rhyme_word = poem.body.splitlines()[0].split(' ')[-1]
+        rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
     elif lineNumber-1 == 3:
-        rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
+        rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
     elif rhyme_line:
         rhyme_word = rhyme_line.line.split(' ')[-1]
         test = True
@@ -335,6 +347,9 @@ def specialadd():
                 update.update_record(line = form.vars.line)
                 update.update_record(author = auth.user.id)
         redirect(URL('poem', args=poem.id))
+    return locals()
+
+def pick():
     return locals()
 
 @auth.requires_login()
