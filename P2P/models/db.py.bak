@@ -105,7 +105,8 @@ db.define_table('abab',
 db.define_table('haiku',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('word_count', 'integer'),
-                Field('syllable_count', 'integer'))
+                Field('syllable_count', 'integer'),
+                Field('body_syllable_count', 'integer'))
 
 db.define_table('new_line',
                 Field('poem_id', db.poem, readable=False, writable=False),

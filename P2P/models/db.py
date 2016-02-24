@@ -105,7 +105,9 @@ db.define_table('abab',
 db.define_table('haiku',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('word_count', 'integer'),
-                Field('syllable_count', 'integer'))
+                Field('syllable_count', 'integer'),
+                Field('body_syllable_count', 'integer'),
+                Field('line_count', 'integer', default=1, writable=False))
 
 db.define_table('new_line',
                 Field('poem_id', db.poem, readable=False, writable=False),
@@ -120,6 +122,7 @@ db.define_table('new_word',
                 Field('word_number', 'integer', readable=True),
                 Field('word', 'string', requires = IS_MATCH('^[A-z]+$', error_message='Only one word allowed, no symbols, numbers, or spaces!')),
                 Field('syllables', 'integer'),
+                Field('line_count', 'integer', default=1, writable=False),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))))
 
 db.define_table('permission',

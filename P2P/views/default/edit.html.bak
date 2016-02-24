@@ -7,9 +7,17 @@
     You can either change your title, first two lines, or description of the poem.
 </h4>
 <center>
-
+{{if poem.category == '16 line ABAB rhyme':}}
+<center>
 <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=poem.body.splitlines()[0]}}<font color = "#9900ff">
-<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></center>
+<div class = "left"><b>2  | </b></div></font>{{=poem.body.splitlines()[1]}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}"style="color: #000000">{{if line.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=line.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=line.line_number}}  | </b></div></font>{{=line.line}}{{pass}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if line.line_number % 4 == 0 and 16 > line.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
+
+{{elif poem.category == 'Haiku':}}
+{{line2 = True}}
+{{line3 = True}}
+<center>
+    <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"> {{=poem.body}}</a>{{if words:}}{{for word in words:}}{{if word.word == '':}}<a href="{{=URL('specialadd',args= (poem.id,word.word_number))}}" style="color: #ff0000">Add Word{{pass}}</a>{{if (word.line_count == 2) and (line2 == True):}}</br><div class = "left"><font color = "#9900ff"><b>2  | </b></font></div>{{line2 = False}}{{pass}}{{if (word.line_count == 3) and (line3 == True):}}</br><div class = "left"><font color = "#9900ff"><b>3  | </b></font></div>{{line3 = False}}{{pass}}<a href="#" data-toggle="tooltip" data-placement="right" title="{{=word.author.username}}">{{=word.word}}</a>{{pass}}{{pass}}</font></div></pre></div></center>
+{{pass}}
 </br>
 {{=form}}
 </br>
@@ -40,6 +48,7 @@ table#t01 th	{
 }
 </style>
 </head>
+{{if poem.category == '16 line ABAB rhyme':}}
 <h2 align = "center">
     <u>Delete Lines</u>
 </h2>
@@ -56,14 +65,31 @@ table#t01 th	{
         <td>{{=lines_form[num]}}{{lines_form[num].deleted = True}}</td>
 </tr>
 {{pass}}
-
+{{elif poem.category == 'Haiku':}}
+<h2 align = "center">
+    <u>Delete Lines</u>
+</h2>
+<h4 align = "center">
+    Here you can delete any lines that were added if you do not like them.
+</h4>
+<table class="table" style = "width:50%" align = "center" border = "2" id="t01">
+    <tr>
+        <th>Line</th>
+        <th>Delete</th>
+    </tr>
+{{for num in range(0,len(word_form)):}}
+        <td><font color = "#9900ff"> Word : </font><b>{{=word_form[num]}}</b></td>
+        <td>{{=words_form[num]}}{{words_form[num].deleted = True}}</td>
+</tr>
+{{pass}}
 </table>
+{{pass}}
 </br></br></br></br>
 {{if poem.permission == 'Private':}}
 <h2 align = "center">
     <u>Added Permissions</u>
 </h2>
-</br>
+
 <h4 align = "center">
     Here you can add the username that you allow to edit your private poem.
 </h4>
