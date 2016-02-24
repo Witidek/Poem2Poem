@@ -1,0 +1,33 @@
+{{extend 'layout.html'}}
+<h1 style="text-align:center;">
+    What type of poem would you like to create?
+</h1>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+
+<div class = "selection">
+
+    <div class = "row">
+        <div class = "col-md-6" align="middle">
+            <img src="/P2P/static/images/browse.png" width="140" height="75">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create')}}'" value ='16-line ABAB'>
+        </div>
+
+        <div class = "col-md-6" align="middle">
+            <img src="/P2P/static/images/haiku.jpg" width="140" height="75">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create')}}'" value ='Haiku'>
+        </div>
+
+    </div>
+
+
+</div>

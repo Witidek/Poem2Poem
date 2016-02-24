@@ -1,0 +1,27 @@
+<center><h1>Create a new haiku!</h1></center>
+<style>
+textarea {
+    width: 100px;
+    height: 70px;
+}
+input { width:50px; }
+</style>
+
+<h4>
+   To get started: </br> 
+   1. Enter a Title </br> 
+   2. Enter a quick description about your haiku </br>
+   3. Enter one to five syllables worth of words.</br>
+   4. Choose if its Public which means anyone can edit your poem or Private where only you and people you allow can edit your poem.</br>
+   5. Submit!
+
+</h4>
+</br></br>
+
+<div class="container">
+    <div class="row">
+        <div id="web2py_create_form" class="col-lg-6">
+            {{=form}}
+        </div>
+    </div>
+</div>
