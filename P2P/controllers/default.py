@@ -43,7 +43,7 @@ def poem():
     poem = db.poem(request.args(0,cast=int))
 
     # Displaying ABAB
-    if poem.category == '16 line ABAB rhyme':
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
         abab = db(db.abab.poem_id == poem.id).select().first()
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
@@ -80,8 +80,12 @@ def create():
     if not request.args(0): redirect(URL('browse'))
 
     # Create form for 16 line ABAB rhyme
-    if request.args(0) == 'abab':
+    if (request.args(0) == 'abab') or (request.args(0) == 'aabb') or (request.args(0) == 'sonnet') or (request.args(0) == 'limerick') or (request.args(0) == 'aaaa'):
         form = SQLFORM.factory(db.poem, db.abab, fields=['title', 'description', 'body', 'permission']).process()
+        if request.args(0) == 'aabb': form.vars.category = '16 line AABB rhyme'
+        elif request.args(0) == 'sonnet': form.vars.category = 'Sonnet'
+        elif request.args(0) == 'limerick': form.vars.category = 'Limerick'
+        elif request.args(0) == 'aaaa' : form.vars.category = 'AAAA'
         if form.accepted:
             # Do an insert if ABAB
             id = db.poem.insert(**db.poem._filter_fields(form.vars))
@@ -138,7 +142,7 @@ def edit():
     poem = db.poem(poem_id)
 
     # Displaying ABAB
-    if poem.category == '16 line ABAB rhyme':
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet'):
         abab = db(db.abab.poem_id == poem.id).select().first()
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
@@ -155,14 +159,15 @@ def edit():
 
     # Create SQLFORM
     form = SQLFORM(db.poem, record=poem, fields=['title','description']).process()
-    if poem.category == '16 line ABAB rhyme':
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'aaaa'):
         lines = db(db.new_line.poem_id == poem_id).select(orderby=db.new_line.line_number)
         lines_form = []
         line_form = []
         for line in lines:
-            delete_form = FORM(INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit', _value = 'Delete')).process(onvalidation=delete_line, next=URL('edit', args=poem.id))
+            delete_form = FORM(INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit', _value = 'Delete')).process(onvalidation=delete_line)
             delete_form.vars.line = line.line
             lines_form.append(delete_form)
+            print line.id
             line_form.append(line.line)
     elif poem.category == 'Haiku':
         word = db(db.new_word.poem_id == poem_id).select(orderby=db.new_word.word_number)
@@ -193,7 +198,7 @@ def edit():
     return locals()
 
 def delete_line(form):
-    print form.vars.line_id
+    print 'deleting' + form.vars.line_id
     row = db(db.new_line.id == form.vars.line_id).select().first()
     row.update_record(line = '')
 
@@ -259,20 +264,41 @@ def add():
     poem = db.poem(request.args(0,cast=int))
 
     # Add form for ABAB
-    if poem.category == '16 line ABAB rhyme':
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
         abab = db(db.abab.poem_id == poem.id).select().first()
-        rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
-
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        if (poem.category == '16 line ABAB rhyme') or ((poem.category == 'Sonnet') and (abab.line_count < 12)):
         # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
-        rhyme_word = ''
-        if abab.line_count == 2:
-            rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
-        elif abab.line_count == 3:
-            rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
-        else:
-            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count-1)).select().first()
+            rhyme_word = ''
+            if abab.line_count == 2:
+                rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+            elif abab.line_count == 3:
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count-1)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+        elif (poem.category == 'Sonnet') and (abab.line_count > 11):
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
             rhyme_word = rhyme_line.line.split(' ')[-1]
-
+        elif (poem.category == '16 line AABB rhyme') or ((poem.category == 'Limerick') and (abab.line_count+1 < 5)):
+            rhyme_word = ''
+            if abab.line_count == 2:
+                rhyme_word = ''
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+        elif (poem.category == 'Limerick') and (abab.line_count+1 > 4):
+            rhyme_word = ''
+            rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+        elif poem.category == 'AAAA':
+            rhyme_word = ''
+            if abab.line_count == 2: 
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            else:
+                rhyme_word = ''
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
         #Get use the rhymebrain API
         url = 'http://rhymebrain.com/talk'
         data = {}
@@ -370,26 +396,36 @@ def specialadd():
             redirect(URL('poem', args=poem.id))
 
     # Add form for ABAB
-    if poem.category == '16 line ABAB rhyme':
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme'):
         abab = db(db.abab.poem_id == poem.id).select().first()
         rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        if poem.category == '16 line ABAB rhyme':
+            # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+2)).select().first()
+            test = False
+            if lineNumber-1 == 2:
+                rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+            elif lineNumber-1 == 3:
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            elif rhyme_line:
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+                test = True
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-2)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
 
-        # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
-        rhyme_word = ''
-        rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+2)).select().first()
-        test = False
-        if lineNumber-1 == 2:
-            rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
-        elif lineNumber-1 == 3:
-            rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
-        elif rhyme_line:
-            rhyme_word = rhyme_line.line.split(' ')[-1]
-            test = True
-        else:
-            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-2)).select().first()
-            rhyme_word = rhyme_line.line.split(' ')[-1]
-
-
+        elif poem.category == '16 line AABB rhyme':
+            # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+1)).select().first()
+            test = False
+            if (lineNumber % 4 == 0) or (lineNumber % 4 == 2):
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-1)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+            elif rhyme_line:
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+                test = True
         #Get use the rhymebrain API
         url = 'http://rhymebrain.com/talk'
         data = {}

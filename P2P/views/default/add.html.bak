@@ -3,10 +3,10 @@
 
 <h1 align = "center"><i>{{=poem.title}}</i></h1>
 </br>
-{{if poem.category == '16 line ABAB rhyme':}}
+{{if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):}}
 <center>
-<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=abab.body.splitlines()[0]}}<font color = "#9900ff">
-<div class = "left"><b>2  | </b></div></font>{{=abab.body.splitlines()[1]}}</a>{{if rows:}}{{for row in rows:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=row.author.username}}"style="color: #000000">{{if row.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=row.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=row.line_number}}  | </b></div></font>{{=row.line}}{{pass}}{{if row.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,row.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if row.line_number % 4 == 0 and 16 > row.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
+    <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{if poem.category == 'Sonnet':}} <div class = "left">{{=abab.body.splitlines()[0]}}</div> {{else:}}{{=abab.body.splitlines()[0]}}{{pass}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{=abab.body.splitlines()[1]}}</div>{{else:}}{{=abab.body.splitlines()[1]}}{{pass}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}"style="color: #000000">{{if line.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=line.line_number}} | </div></b></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{if (poem.category == 'Sonnet') and (line.line_number > 12):}}   {{pass}}{{=line.line}}</div>{{else:}}{{=line.line}}{{pass}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=line.line_number}}  | </b></div></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{=line.line}}</div>{{else:}}{{=line.line}}{{pass}}{{pass}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if (line.line_number % 4 == 0) and (16 > line.line_number) and (poem.category != 'Sonnet'):}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
 
 {{elif poem.category == 'Haiku':}}
 {{line2 = True}}
@@ -17,13 +17,56 @@
 <center>
 <h4>
     Author: {{=db.auth_user(poem.author).username}}</br>
-    Syllables Left in the Row: {{=syllables_left}}
+    {{if poem.category == 'Haiku':}}Syllables Left in the Row: {{=syllables_left}} {{pass}}
 </h4>
 
-{{if poem.category == '16 line ABAB rhyme':}}
+{{if (poem.category == '16 line ABAB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'AAAA'):}}
     {{addRhyme = False}}
 
     {{if (abab.line_count+1) % 4 == 1 or (abab.line_count+1) % 4 == 2 :}} {{addRhyme = True}} {{pass}}
+    {{if (poem.category == 'Sonnet') and (abab.line_count+1) > 11:}} {{addRhyme = False}} {{pass}}
+    {{if addRhyme == False:}}
+    <h2>Add a line to this poem</h2>
+    <h4>
+        Enter a line below. Use our rhyming API to help you rhyme with the last word
+    </h4>
+    {{elif addRhyme == True:}}
+    <h2>Add a line to this poem</h2>
+    <h3>Start a New Rhyme</h3>
+    <h4>
+       If you are entering a line for a new stanza enter any words for the next user to rhyme with.
+    </h4>
+    {{pass}}
+
+    {{=form}}
+
+    </center>
+
+    {{if (addRhyme == False) or (poem.category == 'AAAA'):}}
+    <table class="table">
+      <col width="500">
+        <tr>
+            <th>Syllables</th>
+            <th>Words that rhyme with {{=rhyme_word}}</th>
+        </tr>
+       {{for x in range(0,len(sorted_syllables)):}}
+       <tr>
+            {{if len(sorted_syllables[x]) > 0:}}
+               {{words = ''}}
+                <td>{{=x}} Syllables: </td>
+                {{words = ' , '.join(sorted_syllables[x][0:10])}}
+                <td>{{=words}}</td>
+            {{pass}}
+        {{pass}}
+        </tr>
+
+    {{pass}}
+
+{{elif (poem.category == '16 line AABB rhyme') or (poem.category == 'Limerick'):}}
+    {{addRhyme = False}}
+
+    {{if (abab.line_count+1) % 4 == 3 or (abab.line_count+1) % 4 == 1 :}} {{addRhyme = True}} {{pass}}
+    {{if (poem.category == 'Limerick') and (abab.line_count+1 == 5):}}{{addRhyme = False}}{{pass}}
     {{if addRhyme == False:}}
     <h2>Add a line to this poem</h2>
     <h4>

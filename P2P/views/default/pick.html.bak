@@ -15,19 +15,45 @@
 <div class = "selection">
 
     <div class = "row">
-        <div class = "col-md-6" align="middle">
-            <img src="/P2P/static/images/ABAB.png" width="140" height="100">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/ABAB.png" width="120" height="80">
             </br>
             <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='abab')}}'" value ='16-line ABAB'>
         </div>
 
-        <div class = "col-md-6" align="middle">
-            <img src="/P2P/static/images/haiku.jpg" width="140" height="75">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/haiku.jpg" width="120" height="80">
             </br>
             <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='haiku')}}'" value ='Haiku'>
         </div>
 
+
+    <div class = "row">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/shakespeare1.jpg" width="120" height="80">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='sonnet')}}'" value ='Sonnet'>
+        </div>
+
+    <div class = "row2">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/AABB.png" width="120" height="80">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='aabb')}}'" value ='16-line AABB'>
+        </div>
     </div>
-
-
+    <div class = "row2">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/limerick.png" width="120" height="80">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='limerick')}}'" value ='limeirck'>
+        </div>
+    </div>
+       <div class = "row2">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/aaaa.png" width="120" height="80">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='aaaa')}}'" value ='aaaa'>
+        </div>
+    </div>
 </div>

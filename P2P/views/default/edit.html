@@ -7,10 +7,10 @@
     You can either change your title, first two lines, or description of the poem.
 </h4>
 <center>
-{{if poem.category == '16 line ABAB rhyme':}}
+{{if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet'):}}
 <center>
-<div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{=abab.body.splitlines()[0]}}<font color = "#9900ff">
-<div class = "left"><b>2  | </b></div></font>{{=abab.body.splitlines()[1]}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}"style="color: #000000">{{if line.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=row.line_number}} | </div></b></font>{{=line.line}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=line.line_number}}  | </b></div></font>{{=line.line}}{{pass}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if line.line_number % 4 == 0 and 16 > line.line_number:}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
+    <div style="width:750px;overflow:auto" class = "center"><pre ><font size = "3"><a href="#" data-toggle="tooltip" data-placement="right" title="{{=poem.author.username}}"style="color: #000000"><div class = "left"><font color = "#9900ff"><b>1  | </b></font></div>{{if poem.category == 'Sonnet':}} <div class = "left">{{=abab.body.splitlines()[0]}}</div> {{else:}}{{=abab.body.splitlines()[0]}}{{pass}}<font color = "#9900ff">
+<div class = "left"><b>2  | </b></div></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{=abab.body.splitlines()[1]}}</div>{{else:}}{{=abab.body.splitlines()[1]}}{{pass}}</a>{{if lines:}}{{for line in lines:}}</br><a href="#" data-toggle="tooltip" data-placement="right" title="{{=line.author.username}}"style="color: #000000">{{if line.line_number > 9:}}<font color = "#9900ff"><b><div class = "left">{{=line.line_number}} | </div></b></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{if (poem.category == 'Sonnet') and (line.line_number > 12):}}   {{pass}}{{=line.line}}</div>{{else:}}{{=line.line}}{{pass}}{{else:}}<font color = "#9900ff"><div class = "left"><b>{{=line.line_number}}  | </b></div></font>{{if poem.category == 'Sonnet':}}<div class = "left">{{=line.line}}</div>{{else:}}{{=line.line}}{{pass}}{{pass}}{{if line.line == '':}}<a href="{{=URL('specialadd',args= (poem.id,line.line_number))}}" style="color: #ff0000">Deleted Line: Click Here to Add the Line{{pass}}</a>{{if (line.line_number % 4 == 0) and (16 > line.line_number) and (poem.category != 'Sonnet') and (poem.category != 'Limerick') and (poem.category != 'AAAA'):}} </br> {{pass}}{{pass}}{{pass}}</font></div></pre></div></center>
 
 {{elif poem.category == 'Haiku':}}
 {{line2 = True}}
@@ -48,7 +48,7 @@ table#t01 th	{
 }
 </style>
 </head>
-{{if poem.category == '16 line ABAB rhyme':}}
+{{if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet'):}}
 <h2 align = "center">
     <u>Delete Lines</u>
 </h2>
@@ -65,6 +65,7 @@ table#t01 th	{
         <td>{{=lines_form[num]}}{{lines_form[num].deleted = True}}</td>
 </tr>
 {{pass}}
+</table>
 {{elif poem.category == 'Haiku':}}
 <h2 align = "center">
     <u>Delete Lines</u>
