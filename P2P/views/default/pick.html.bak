@@ -46,14 +46,21 @@
         <div class = "col-md-4" align="middle" display: inline-block>
             <img src="/P2P/static/images/limerick.png" width="120" height="80">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='limerick')}}'" value ='limeirck'>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='limerick')}}'" value ='Limerick'>
         </div>
     </div>
        <div class = "row2">
         <div class = "col-md-4" align="middle" display: inline-block>
             <img src="/P2P/static/images/aaaa.png" width="120" height="80">
             </br>
-            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='aaaa')}}'" value ='aaaa'>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='aaaa')}}'" value ='8-line AAAA'>
+        </div>
+    </div>
+    <div class = "row3">
+        <div class = "col-md-4" align="middle" display: inline-block>
+            <img src="/P2P/static/images/1234.png" width="150" height="100">
+            </br>
+            <input type=button style = "position:relative;" onClick="location.href='{{=URL('create', args='syllabic')}}'" value ='10-line Syllabic Verse'>
         </div>
     </div>
 </div>

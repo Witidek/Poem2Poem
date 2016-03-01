@@ -48,7 +48,7 @@ def poem():
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
     # Displaying Haiku
-    elif poem.category == 'Haiku':
+    elif (poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
         haiku = db(db.haiku.poem_id == poem.id).select().first()
         words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
         contributors = db(db.new_word.poem_id == poem.id).select(db.new_word.author, groupby=db.new_word.author)
@@ -98,9 +98,16 @@ def create():
                 db.permission.insert(user_id = auth.user, poem_id = id)
             redirect(URL('poem', args=id))
     # Create form for haiku
-    elif request.args(0) == 'haiku':
-        form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_haiku_check)
-        form.vars.category = 'Haiku'
+    elif (request.args(0) == 'haiku') or (request.args(0) == 'syllabic'):
+        if request.args(0) == 'haiku':
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_haiku_check)
+            form.vars.category = 'Haiku'
+    #########################################
+    #REMEMBER TO CHANGE THE START HAIKU TEXT
+    #########################################
+        elif request.args(0) == 'syllabic':
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_syllabic_check)
+            form.vars.category = '10 line Syllabic Verse'
         if form.accepted:
             word_list = str(form.vars.start_haiku).split(' ')
             word_count = len(word_list)
@@ -118,6 +125,20 @@ def create():
             if form.vars.permission == 'Private':
                 db.permission.insert(user_id = auth.user, poem_id = form.vars.id)
             redirect(URL('poem', args=id))
+    elif request.args(0) == 'acrostic':
+        form = SQLFORM.factory(db.poem, db.acrostic, fields=['title', 'description', 'word', 'permission']).process()
+        form.vars.category = 'Acrostic'
+        if form.accepted:
+            # Do an insert if Acrostic
+            id = db.poem.insert(**db.poem._filter_fields(form.vars))
+            db.acrostic.insert(poem_id = db.poem(id), word = form.vars.word)
+
+            # Create new mutex for this poem
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+            # Create a new insert into permission table if poem was created Private (give owner permission)
+            if form.vars.permission == 'Private':
+                db.permission.insert(user_id = auth.user, poem_id = id)
+            redirect(URL('poem', args=id))
     else:
         redirect(URL('browse'))
     return locals()
@@ -132,6 +153,14 @@ def create_haiku_check (form):
         if syllable_count > 5:
             form.errors.start_haiku = 'Too many Syllables (5 Max)'
 
+def create_syllabic_check (form):
+    word_list = str(form.vars.start_haiku).split(' ')
+    word_count = len(word_list)
+    syllable_count = 0
+    for word in word_list:
+        syllable_count += count_syllables(word)
+        if syllable_count > 1:
+            form.errors.start_haiku = 'Too many Syllables (1 Max)'
 @auth.requires_login()
 def edit():
     # Redirect to poem browser if no argument for poem id
@@ -291,6 +320,14 @@ def add():
         elif (poem.category == 'Limerick') and (abab.line_count+1 > 4):
             rhyme_word = ''
             rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+        elif poem.category == 'AAAA':
+            rhyme_word = ''
+            if abab.line_count == 2:
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            else:
+                rhyme_word = ''
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
         #Get use the rhymebrain API
         url = 'http://rhymebrain.com/talk'
         data = {}
@@ -320,24 +357,54 @@ def add():
             mutex.update_record(editing = False)
             redirect(URL('poem', args=poem.id))
     # Add form for Haiku
-    elif poem.category == 'Haiku':
+    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
         haiku = db(db.haiku.poem_id == poem.id).select().first()
         words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
         form = SQLFORM(db.new_word, fields=['word'])
         form.vars.poem_id = poem.id
         form.vars.word_number = haiku.word_count + 1
         syllables_left = 0
-        if haiku.syllable_count < 5:
-            form.vars.line_count = 1
-            syllables_left = 5 - haiku.syllable_count
-        elif 5 <= haiku.syllable_count <=11:
-            form.vars.line_count = 2
-            syllables_left = 12 - haiku.syllable_count
-        elif 11 < haiku.syllable_count:
-            form.vars.line_count = 3
-            syllables_left = 17 - haiku.syllable_count
+        if poem.category == 'Haiku':
+            if haiku.syllable_count < 5:
+                form.vars.line_count = 1
+                syllables_left = 5 - haiku.syllable_count
+            elif 5 <= haiku.syllable_count <=11:
+                form.vars.line_count = 2
+                syllables_left = 12 - haiku.syllable_count
+            elif 11 < haiku.syllable_count:
+                form.vars.line_count = 3
+                syllables_left = 17 - haiku.syllable_count
+            form.process(onvalidation = add_haiku_check)
+        elif poem.category == '10 line Syllabic Verse':
+            if haiku.syllable_count < 3:
+                form.vars.line_count = 2
+                syllables_left = 3 - haiku.syllable_count
+            elif 3 <= haiku.syllable_count <=5:
+                form.vars.line_count = 3
+                syllables_left = 6 - haiku.syllable_count
+            elif 5 < haiku.syllable_count <= 9:
+                form.vars.line_count = 4
+                syllables_left = 10 - haiku.syllable_count
+            elif 9 < haiku.syllable_count <= 14:
+                form.vars.line_count = 5
+                syllables_left = 15 - haiku.syllable_count
+            elif 14 < haiku.syllable_count <= 20:
+                form.vars.line_count = 6
+                syllables_left = 21 - haiku.syllable_count
+            elif 20 < haiku.syllable_count <= 27:
+                form.vars.line_count = 7
+                syllables_left = 28 - haiku.syllable_count
+            elif 27 < haiku.syllable_count <= 35:
+                form.vars.line_count = 8
+                syllables_left = 36 - haiku.syllable_count
+            elif 35 < haiku.syllable_count <= 44:
+                form.vars.line_count = 9
+                syllables_left = 45 - haiku.syllable_count
+            elif 44 < haiku.syllable_count:
+                form.vars.line_count = 10
+                syllables_left = 55 - haiku.syllable_count
+            form.process(onvalidation = add_syllabic_check)
 
-        form.process(onvalidation = add_haiku_check)
         if form.accepted:
             syllable_count = count_syllables(form.vars.word)
             db.new_word(form.vars.id).update_record(syllables = syllable_count)
@@ -359,6 +426,31 @@ def add_haiku_check(form):
     elif 11 < haiku.syllable_count:
         syllables_left = 17 - haiku.syllable_count
 
+    if count_syllables(form.vars.word) > syllables_left:
+        form.errors.word = 'Word has too many syllables for this line'
+
+def add_syllabic_check(form):
+    haiku = db(db.haiku.poem_id == form.vars.poem_id).select().first()
+
+    syllables_left = 0
+    if haiku.syllable_count < 3:
+        syllables_left = 3 - haiku.syllable_count
+    elif 3 <= haiku.syllable_count <= 5:
+        syllables_left = 6 - haiku.syllable_count
+    elif 5 < haiku.syllable_count <= 9:
+        syllables_left = 10 - haiku.syllable_count
+    elif 9 < haiku.syllable_count <= 14:
+        syllables_left = 15 - haiku.syllable_count
+    elif 14 < haiku.syllable_count <= 20:
+        syllables_left = 21 - haiku.syllable_count
+    elif 20 < haiku.syllable_count <= 27:
+        syllables_left = 28 - haiku.syllable_count
+    elif 27 < haiku.syllable_count <= 35:
+        syllables_left = 36 - haiku.syllable_count
+    elif 35 < haiku.syllable_count <= 44:
+        syllables_left = 45 - haiku.syllable_count
+    elif 44 < haiku.syllable_count:
+        syllables_left = 55 - haiku.syllable_count
     if count_syllables(form.vars.word) > syllables_left:
         form.errors.word = 'Word has too many syllables for this line'
 

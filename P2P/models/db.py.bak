@@ -93,7 +93,7 @@ db.define_table('poem',
                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
                 Field('description', 'text',requires=IS_LENGTH(200) ),
                 Field('date_posted', 'datetime', default=request.now, writable=False, requires=IS_DATE(format=('%m-%d-%Y'))),
-                Field('category', requires = IS_IN_SET(['16 line ABAB rhyme', 'Haiku','16 line AABB rhyme','Sonnet','Limerick']), default = '16 line ABAB rhyme'),
+                Field('category', requires = IS_IN_SET(['16 line ABAB rhyme', 'Haiku','16 line AABB rhyme','Sonnet','Limerick','AAAA','10 line Syllabic Verse']), default = '16 line ABAB rhyme'),
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ))
 db.poem.id.readable = False
 

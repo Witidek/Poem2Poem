@@ -7,11 +7,10 @@
 ## - user is required for authentication and authorization
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
-
+import datetime
 
 def index():
     return locals()
-
 
 def user():
     return dict(form=auth())
@@ -36,42 +35,131 @@ def search():
 
     return locals()
 
-def test():
-    import urllib
-    import urllib2
-    from gluon.contrib import simplejson
-    url = 'http://rhymebrain.com/talk'
-    data = {}
-    data['function'] = 'getRhymes'
-    data['word'] = 'fire'
-    url_values = urllib.urlencode(data)
-    full_url = url + '?' + url_values
-    data = urllib2.urlopen(full_url)
-    result = data.read()
-    parsed_json = simplejson.loads(result)
-    return locals()
-
 def poem():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
-    contributors = db(db.newline.poem_id == poem.id).select(db.newline.author, groupby=db.newline.author)
+
+    # Displaying ABAB
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
+        abab = db(db.abab.poem_id == poem.id).select().first()
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
+    # Displaying Haiku
+    elif (poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
+        haiku = db(db.haiku.poem_id == poem.id).select().first()
+        words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
+        contributors = db(db.new_word.poem_id == poem.id).select(db.new_word.author, groupby=db.new_word.author)
 
     return locals()
+
+def count_syllables(str):
+    import urllib
+    import urllib2
+    from gluon.contrib import simplejson
+
+    # GET JSONP from RhymeBrain API and parse
+    url = 'http://rhymebrain.com/talk'
+    data = {}
+    data['function'] = 'getWordInfo'
+    data['word'] = str
+    url_values = urllib.urlencode(data)
+    full_url = url + '?' + url_values
+    data = urllib2.urlopen(full_url)
+    result = data.read()
+    parsed_json = simplejson.loads(result)
+
+    # Return number of syllables cast as int
+    return int(parsed_json['syllables'])
 
 @auth.requires_login()
 def create():
-    form = SQLFORM(db.poem, fields=['title', 'body', 'permission'], labels = {'body':'First two lines'}).process()
-    if form.accepted:
+    # Redirect to poem browser if no argument for poem type
+    if not request.args(0): redirect(URL('browse'))
+
+    # Create form for 16 line ABAB rhyme
+    if (request.args(0) == 'abab') or (request.args(0) == 'aabb') or (request.args(0) == 'sonnet') or (request.args(0) == 'limerick') or (request.args(0) == 'aaaa'):
+        form = SQLFORM.factory(db.poem, db.abab, fields=['title', 'description', 'body', 'permission']).process()
+        if request.args(0) == 'aabb': form.vars.category = '16 line AABB rhyme'
+        elif request.args(0) == 'sonnet': form.vars.category = 'Sonnet'
+        elif request.args(0) == 'limerick': form.vars.category = 'Limerick'
+        elif request.args(0) == 'aaaa' : form.vars.category = 'AAAA'
+        if form.accepted:
+            # Do an insert if ABAB
+            id = db.poem.insert(**db.poem._filter_fields(form.vars))
+            db.abab.insert(poem_id = db.poem(id), body = form.vars.body)
+
+            # Create new mutex for this poem
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+            # Create a new insert into permission table if poem was created Private (give owner permission)
+            if form.vars.permission == 'Private':
+                db.permission.insert(user_id = auth.user, poem_id = id)
+            redirect(URL('poem', args=id))
+    # Create form for haiku
+    elif (request.args(0) == 'haiku') or (request.args(0) == 'syllabic'):
+        if request.args(0) == 'haiku':
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_haiku_check)
+            form.vars.category = 'Haiku'
+    #########################################
+    #REMEMBER TO CHANGE THE START HAIKU TEXT
+    #########################################
+        elif request.args(0) == 'syllabic':
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_syllabic_check)
+            form.vars.category = '10 line Syllabic Verse'
+        if form.accepted:
+            word_list = str(form.vars.start_haiku).split(' ')
+            word_count = len(word_list)
+            syllable_count = 0
+            for word in word_list:
+                syllable_count += count_syllables(word)
+
+            id = db.poem.insert(**db.poem._filter_fields(form.vars))
+            db.haiku.insert(poem_id = id, start_haiku = form.vars.start_haiku, word_count = word_count, syllable_count = syllable_count, body_syllable_count = syllable_count)
+
+            # Create new mutex for this poem
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+
+            # Create a new insert into permission table if poem was created Private (give owner permission)
+            if form.vars.permission == 'Private':
+                db.permission.insert(user_id = auth.user, poem_id = form.vars.id)
+            redirect(URL('poem', args=id))
+    elif request.args(0) == 'acrostic':
+        form = SQLFORM.factory(db.poem, db.acrostic, fields=['title', 'description', 'word', 'permission']).process()
+        form.vars.category = 'Acrostic'
+        # Do an insert if Acrostic
+        id = db.poem.insert(**db.poem._filter_fields(form.vars))
+        db.acrostic.insert(poem_id = db.poem(id), word = form.vars.word)
+
+        # Create new mutex for this poem
+        db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
         # Create a new insert into permission table if poem was created Private (give owner permission)
         if form.vars.permission == 'Private':
-            db.permission.insert(user_id = auth.user, poem_id = form.vars.id)
+            db.permission.insert(user_id = auth.user, poem_id = id)
+        redirect(URL('poem', args=id))
+    else:
         redirect(URL('browse'))
     return locals()
 
+def create_haiku_check (form):
+
+    word_list = str(form.vars.start_haiku).split(' ')
+    word_count = len(word_list)
+    syllable_count = 0
+    for word in word_list:
+        syllable_count += count_syllables(word)
+        if syllable_count > 5:
+            form.errors.start_haiku = 'Too many Syllables (5 Max)'
+
+def create_syllabic_check (form):
+    word_list = str(form.vars.start_haiku).split(' ')
+    word_count = len(word_list)
+    syllable_count = 0
+    for word in word_list:
+        syllable_count += count_syllables(word)
+        if syllable_count > 1:
+            form.errors.start_haiku = 'Too many Syllables (1 Max)'
 @auth.requires_login()
 def edit():
     # Redirect to poem browser if no argument for poem id
@@ -81,18 +169,44 @@ def edit():
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
 
+    # Displaying ABAB
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet'):
+        abab = db(db.abab.poem_id == poem.id).select().first()
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
+    # Displaying Haiku
+    elif poem.category == 'Haiku':
+        haiku = db(db.haiku.poem_id == poem.id).select().first()
+        words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
+        contributors = db(db.new_word.poem_id == poem.id).select(db.new_word.author, groupby=db.new_word.author)
+
     # Redirect if current user is not owner of poem
     if poem.author != auth.user.id:
         session.flash = 'You are not the owner of this poem and cannot edit it'
         redirect(URL('poem',args=poem.id))
 
     # Create SQLFORM
-    form = SQLFORM(db.poem, record=poem, fields=['title','body']).process()
-    lines = db(db.newline.poem_id == poem_id).select(orderby=db.newline.line_number)
-    lines_form = []
-    for line in lines:
-        lines_form.append(SQLFORM(db.newline, record=line.id, showid=False, deletable=True, submit_button = 'Delete', fields=['line']).process())
-    #
+    form = SQLFORM(db.poem, record=poem, fields=['title','description']).process()
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'aaaa'):
+        lines = db(db.new_line.poem_id == poem_id).select(orderby=db.new_line.line_number)
+        lines_form = []
+        line_form = []
+        for line in lines:
+            delete_form = FORM(INPUT(_name="line_id", _type='hidden',value=line.id), INPUT(_type='submit', _value = 'Delete')).process(onvalidation=delete_line)
+            delete_form.vars.line = line.line
+            lines_form.append(delete_form)
+            print line.id
+            line_form.append(line.line)
+    elif poem.category == 'Haiku':
+        word = db(db.new_word.poem_id == poem_id).select(orderby=db.new_word.word_number)
+        words_form = []
+        word_form = []
+        for word in words:
+            delete_word_form = FORM(INPUT(_name="word_id", _type='hidden',value=word.id), INPUT(_type='submit', _value = 'Delete')).process(onvalidation=delete_word, next=URL('edit', args=poem.id))
+            delete_word_form.vars.word = word.word
+            words_form.append(delete_word_form)
+            word_form.append(word.word)
+
     if form.accepted: redirect(URL('browse'))
     forms = FORM('Username: ',
               INPUT(_name='username'),
@@ -111,70 +225,341 @@ def edit():
                     response.flash = 'Added'
     return locals()
 
+def delete_line(form):
+    print 'deleting' + form.vars.line_id
+    row = db(db.new_line.id == form.vars.line_id).select().first()
+    row.update_record(line = '')
+
+def delete_word(form):
+    print form.vars.word_id
+    word = db(db.new_word.id == form.vars.word_id).select().first()
+    word.update_record(word = '')
+
+KEY = 'mykey'
+
+@auth.requires_login()
+def add_check():
+    # Redirect to poem browser if no argument for poem id
+    if not request.args(0): redirect(URL('browse'))
+    poem_id = request.args(0,cast=int)
+    poem = db.poem(poem_id)
+    mutex = db(db.mutex.poem_id == poem_id).select().first()
+
+    if request.vars.quit:
+        mutex.update_record(editing = False)
+    else:
+        # Check if poem is private and if current user has proper permissions, redirect if no permission
+        if poem.permission == 'Private':
+            print 'private'
+            print db(db.permission.poem_id == poem.id).select().first().user_id
+            print auth.user.id
+            if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():
+                session.flash = 'You do not have permission to add to this poem'
+                redirect(URL('poem', args=poem.id))
+
+        # Check and redirect if another user is currently trying to add a line for this poem
+        if mutex.editing:
+            edit_timestamp = mutex.edit_timestamp
+            minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
+            if minutes_elapsed < 0.1:
+                session.flash = 'A user is currently adding a line!'
+                redirect(URL('poem', args=poem_id))
+
+        mutex.update_record(editing = True, edit_timestamp = request.now)
+        redirect(URL('add', args=poem_id, hmac_key=KEY))
+        print 'should not get here'
+
+def unlocked_mutex():
+    print 'trying to unlock...'
+    if not request.args(0): redirect(URL('browse'))
+    poem_id = request.args(0,cast=int)
+    mutex = db(db.mutex.poem_id == poem_id).select().first()
+    if request.vars.quit:
+        mutex.update_record(editing = False)
+        print 'unlocked mutex?'
+
 @auth.requires_login()
 def add():
     import urllib
     import urllib2
     from gluon.contrib import simplejson
+
+    if not URL.verify(request, hmac_key=KEY): redirect(URL('browse'))
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-    rows = db(db.newline.poem_id == poem.id).select(orderby=db.newline.line_number)
-    new_line_number = poem.line_count
-    new_line_number = new_line_number + 1
 
+    # Add form for ABAB
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
+        abab = db(db.abab.poem_id == poem.id).select().first()
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        if (poem.category == '16 line ABAB rhyme') or ((poem.category == 'Sonnet') and (abab.line_count < 12)):
+        # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            if abab.line_count == 2:
+                rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+            elif abab.line_count == 3:
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count-1)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+        elif (poem.category == 'Sonnet') and (abab.line_count > 11):
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+            rhyme_word = rhyme_line.line.split(' ')[-1]
+        elif (poem.category == '16 line AABB rhyme') or ((poem.category == 'Limerick') and (abab.line_count+1 < 5)):
+            rhyme_word = ''
+            if abab.line_count == 2:
+                rhyme_word = ''
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+        elif (poem.category == 'Limerick') and (abab.line_count+1 > 4):
+            rhyme_word = ''
+            rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+        elif poem.category == 'AAAA':
+            rhyme_word = ''
+            if abab.line_count == 2: 
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            else:
+                rhyme_word = ''
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == abab.line_count)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+        #Get use the rhymebrain API
+        url = 'http://rhymebrain.com/talk'
+        data = {}
+        data['function'] = 'getRhymes'
+        data['word'] = rhyme_word
+        url_values = urllib.urlencode(data)
+        full_url = url + '?' + url_values
+        data = urllib2.urlopen(full_url)
+        result = data.read()
+        parsed_json = simplejson.loads(result)
+
+        sorted_syllables = [[] for x in range(11)]
+        for entry in parsed_json:
+            syllable_count = int(entry['syllables'])
+            word = str(entry['word'].encode('utf-8',"ignore"))
+            sorted_syllables[syllable_count].append(word)
+
+        # Create SQLFORM for the user to add a single line as a String
+        form = SQLFORM(db.new_line, fields=['line'])
+        form.vars.poem_id = poem.id
+        form.vars.line_number = abab.line_count + 1
+
+        form.process()
+        if form.accepted:
+            abab.update_record(line_count = abab.line_count + 1)
+            mutex = db(db.mutex.poem_id == poem.id).select().first()
+            mutex.update_record(editing = False)
+            redirect(URL('poem', args=poem.id))
+    # Add form for Haiku
+    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
+        haiku = db(db.haiku.poem_id == poem.id).select().first()
+        words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
+        form = SQLFORM(db.new_word, fields=['word'])
+        form.vars.poem_id = poem.id
+        form.vars.word_number = haiku.word_count + 1
+        syllables_left = 0
+        if poem.category == 'Haiku':
+            if haiku.syllable_count < 5:
+                form.vars.line_count = 1
+                syllables_left = 5 - haiku.syllable_count
+            elif 5 <= haiku.syllable_count <=11:
+                form.vars.line_count = 2
+                syllables_left = 12 - haiku.syllable_count
+            elif 11 < haiku.syllable_count:
+                form.vars.line_count = 3
+                syllables_left = 17 - haiku.syllable_count
+            form.process(onvalidation = add_haiku_check)
+        elif poem.category == '10 line Syllabic Verse':
+            if haiku.syllable_count < 3:
+                form.vars.line_count = 2
+                syllables_left = 3 - haiku.syllable_count
+            elif 3 <= haiku.syllable_count <=5:
+                form.vars.line_count = 3
+                syllables_left = 6 - haiku.syllable_count
+            elif 5 < haiku.syllable_count <= 9:
+                form.vars.line_count = 4
+                syllables_left = 10 - haiku.syllable_count
+            elif 9 < haiku.syllable_count <= 14:
+                form.vars.line_count = 5
+                syllables_left = 15 - haiku.syllable_count
+            elif 14 < haiku.syllable_count <= 20:
+                form.vars.line_count = 6
+                syllables_left = 21 - haiku.syllable_count
+            elif 20 < haiku.syllable_count <= 27:
+                form.vars.line_count = 7
+                syllables_left = 28 - haiku.syllable_count
+            elif 27 < haiku.syllable_count <= 35:
+                form.vars.line_count = 8
+                syllables_left = 36 - haiku.syllable_count
+            elif 35 < haiku.syllable_count <= 44:
+                form.vars.line_count = 9
+                syllables_left = 45 - haiku.syllable_count
+            elif 44 < haiku.syllable_count:
+                form.vars.line_count = 10
+                syllables_left = 55 - haiku.syllable_count
+            form.process(onvalidation = add_syllabic_check)
+
+        if form.accepted:
+            syllable_count = count_syllables(form.vars.word)
+            db.new_word(form.vars.id).update_record(syllables = syllable_count)
+            haiku.update_record(word_count = haiku.word_count + 1, syllable_count = haiku.syllable_count + syllable_count)
+            mutex = db(db.mutex.poem_id == poem.id).select().first()
+            mutex.update_record(editing=False)
+            redirect(URL('poem', args=poem.id))
+
+    return locals()
+
+def add_haiku_check(form):
+    haiku = db(db.haiku.poem_id == form.vars.poem_id).select().first()
+
+    syllables_left = 0
+    if haiku.syllable_count < 5:
+        syllables_left = 5 - haiku.syllable_count
+    elif 5 <= haiku.syllable_count <=11:
+        syllables_left = 12 - haiku.syllable_count
+    elif 11 < haiku.syllable_count:
+        syllables_left = 17 - haiku.syllable_count
+
+    if count_syllables(form.vars.word) > syllables_left:
+        form.errors.word = 'Word has too many syllables for this line'
+
+def add_syllabic_check(form):
+    haiku = db(db.haiku.poem_id == form.vars.poem_id).select().first()
+
+    syllables_left = 0
+    if haiku.syllable_count < 3:
+        syllables_left = 3 - haiku.syllable_count
+    elif 3 <= haiku.syllable_count <= 5:
+        syllables_left = 6 - haiku.syllable_count
+    elif 5 < haiku.syllable_count <= 9:
+        syllables_left = 10 - haiku.syllable_count
+    elif 9 < haiku.syllable_count <= 14:
+        syllables_left = 15 - haiku.syllable_count
+    elif 14 < haiku.syllable_count <= 20:
+        syllables_left = 21 - haiku.syllable_count
+    elif 20 < haiku.syllable_count <= 27:
+        syllables_left = 28 - haiku.syllable_count
+    elif 27 < haiku.syllable_count <= 35:
+        syllables_left = 36 - haiku.syllable_count
+    elif 35 < haiku.syllable_count <= 44:
+        syllables_left = 45 - haiku.syllable_count
+    elif 44 < haiku.syllable_count:
+        syllables_left = 55 - haiku.syllable_count
+    if count_syllables(form.vars.word) > syllables_left:
+        form.errors.word = 'Word has too many syllables for this line'
+
+@auth.requires_login()
+def specialadd():
+    import urllib
+    import urllib2
+    from gluon.contrib import simplejson
+
+    # Redirect to poem browser if no argument for poem id
+    if not request.args(0): redirect(URL('browse'))
+    lineNumber = request.args(1,cast = int)
+    # Load poem using the URL argument as poem id
+    poem = db.poem(request.args(0,cast=int))
+    rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+    check = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == request.args(1))).select().first()
+    if check:
+        if not check.line == '':
+            redirect(URL('browse'))
     # Check if poem is private and if current user has proper permissions, redirect if no permission
     if poem.permission == 'Private':
-        if not db(db.permission.poem_id == poem.id, db.permission.user_id == auth.user).select():
+        print 'private'
+        print db(db.permission.poem_id == poem.id).select().first().user_id
+        print auth.user.id
+        if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():
             session.flash = 'You do not have permission to add to this poem'
             redirect(URL('poem', args=poem.id))
 
-    # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
-    rhyme_word = ''
-    if poem.line_count == 2:
-        rhyme_word = poem.body.splitlines()[0].split(' ')[-1]
-    elif poem.line_count == 3:
-        rhyme_word = poem.body.splitlines()[1].split(' ')[-1]
-    else:
-        rhyme_line = db(db.newline.poem_id == poem.id, db.newline.line_number == poem.line_count-1).select().first()
-        rhyme_word = rhyme_line.line.split(' ')[-1]
+    # Add form for ABAB
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme'):
+        abab = db(db.abab.poem_id == poem.id).select().first()
+        rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        if poem.category == '16 line ABAB rhyme':
+            # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+2)).select().first()
+            test = False
+            if lineNumber-1 == 2:
+                rhyme_word = abab.body.splitlines()[0].split(' ')[-1]
+            elif lineNumber-1 == 3:
+                rhyme_word = abab.body.splitlines()[1].split(' ')[-1]
+            elif rhyme_line:
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+                test = True
+            else:
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-2)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
 
-    #Get use the rhymebrain API
-    url = 'http://rhymebrain.com/talk'
-    data = {}
-    data['function'] = 'getRhymes'
-    data['word'] = rhyme_word
-    url_values = urllib.urlencode(data)
-    full_url = url + '?' + url_values
-    data = urllib2.urlopen(full_url)
-    result = data.read()
-    parsed_json = simplejson.loads(result)
+        elif poem.category == '16 line AABB rhyme':
+            # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+1)).select().first()
+            test = False
+            if (lineNumber % 4 == 0) or (lineNumber % 4 == 2):
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-1)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+            elif rhyme_line:
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+                test = True
+        #Get use the rhymebrain API
+        url = 'http://rhymebrain.com/talk'
+        data = {}
+        data['function'] = 'getRhymes'
+        data['word'] = rhyme_word
+        url_values = urllib.urlencode(data)
+        full_url = url + '?' + url_values
+        data = urllib2.urlopen(full_url)
+        result = data.read()
+        parsed_json = simplejson.loads(result)
 
-    # Create SQLFORM for the user to add a single line as a String
-    form = SQLFORM(db.newline, fields=['line', 'line_number'])
-    form.vars.poem_id = poem.id
-    form.vars.line_number = new_line_number
+        sorted_syllables = [[] for x in range(11)]
+        for entry in parsed_json:
+            syllable_count = int(entry['syllables'])
+            word = str(entry['word'].encode('utf-8',"ignore"))
+            sorted_syllables[syllable_count].append(word)
 
-    form.process(onvalidation=add_validation)
-    if form.accepted:
-        poem.update_record(line_count=new_line_number)
-        redirect(URL('poem', args=poem.id))
+        # Create SQLFORM for the user to add a single line as a String
+        form = FORM(INPUT(_name = "line"),
+               INPUT(_type="submit",_value = "Add"))
+        if form.accepts(request,session):
+            response.flash = form.vars.line
+            if rows:
+                update = db((db.new_line.line == '') & (db.new_line.line_number == request.args(1))).select().first()
+                update.update_record(line = form.vars.line)
+                update.update_record(author = auth.user.id)
+                redirect(URL('poem', args=poem.id))
+
+    # Add form for Haiku
+    elif poem.category == 'Haiku':
+        haiku = db(db.haiku.poem_id == poem.id).select().first()
+        words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
+        # Create SQLFORM for the user to add a single line as a String
+        form = FORM(INPUT(_name = "word"),
+               INPUT(_type="submit",_value = "Add"))
+        if form.accepts(request,session):
+            response.flash = form.vars.word
+            if words:
+                update = db((db.new_word.word == '') & (db.new_word.word_number == request.args(1))).select().first()
+                update.update_record(word = form.vars.word)
+                update.update_record(author = auth.user.id)
+                redirect(URL('poem', args=poem.id))
     return locals()
 
-def add_validation(form):
-    current_line_count = db(db.poem.id == form.vars.poem_id).select().first().line_count
-    print current_line_count
-    print form.vars
-    if current_line_count != form.vars.line_number - 1:
-        form.errors = True
-        redirect(URL('add', args=poem.id))
+def pick():
+    return locals()
 
 @auth.requires_login()
 def profile():
     user = auth.user
     poem = db.poem
     poems_owned = db(db.poem.author == user.id).select()
-    poems_contributed = db(db.newline.author == user.id, db.poem.id == db.newline.poem_id).select(groupby=db.poem.id)
+    poems_contributed = db((db.new_line.author == user.id) & (db.poem.id == db.new_line.poem_id)).select(groupby=db.poem.id)
     return locals()
