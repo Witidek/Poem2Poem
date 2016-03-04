@@ -120,7 +120,10 @@
 {{pass}}
 
 <script language="JavaScript">
-    setTimeout("window.location.href='{{=URL('poem', args=poem.id)}}';",600000);
+    setTimeout(function(){
+        alert("5 minutes have passed. You will be redirected back to this poem.");
+        window.location.href='{{=URL('poem', args=poem.id)}}';
+    }, 300000);
 
     $(window).on('beforeunload', function ()
     {

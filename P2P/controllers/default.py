@@ -240,8 +240,6 @@ def delete_word(form):
     word = db(db.new_word.id == form.vars.word_id).select().first()
     word.update_record(word = '')
 
-KEY = 'mykey'
-
 @auth.requires_login()
 def add_check():
     # Redirect to poem browser if no argument for poem id
@@ -250,29 +248,29 @@ def add_check():
     poem = db.poem(poem_id)
     mutex = db(db.mutex.poem_id == poem_id).select().first()
 
-    if request.vars.quit:
-        mutex.update_record(editing = False)
-    else:
-        # Check if poem is private and if current user has proper permissions, redirect if no permission
-        if poem.permission == 'Private':
-            print 'private'
-            print db(db.permission.poem_id == poem.id).select().first().user_id
-            print auth.user.id
-            if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():
-                session.flash = 'You do not have permission to add to this poem'
-                redirect(URL('poem', args=poem.id))
+    # Check if poem is private and if current user has proper permissions, redirect if no permission
+    if poem.permission == 'Private':
+        print 'private'
+        print db(db.permission.poem_id == poem.id).select().first().user_id
+        print auth.user.id
+        if not db((db.permission.poem_id == poem.id) & (db.permission.user_id == auth.user_id)).select():
+            session.flash = 'You do not have permission to add to this poem'
+            redirect(URL('poem', args=poem.id))
 
-        # Check and redirect if another user is currently trying to add a line for this poem
-        if mutex.editing:
-            edit_timestamp = mutex.edit_timestamp
-            minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
-            if minutes_elapsed < 0.1:
-                session.flash = 'A user is currently adding a line!'
-                redirect(URL('poem', args=poem_id))
+    # Check and redirect if another user is currently trying to add a line for this poem
+    if mutex.editing:
+        print 'yes mutex locked'
+        edit_timestamp = mutex.edit_timestamp
+        minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
+        print minutes_elapsed
+        if minutes_elapsed < 1.0:
+            session.flash = 'A user is currently adding a line!'
+            redirect(URL('poem', args=poem_id))
 
-        mutex.update_record(editing = True, edit_timestamp = request.now)
-        redirect(URL('add', args=poem_id, hmac_key=KEY))
-        print 'should not get here'
+    # Lock mutex and allow user to add to that poem with a session variable
+    mutex.update_record(editing = True, edit_timestamp = request.now)
+    session.allow_add = poem_id
+    redirect(URL('add', args=poem_id))
 
 def unlocked_mutex():
     print 'trying to unlock...'
@@ -289,9 +287,14 @@ def add():
     import urllib2
     from gluon.contrib import simplejson
 
-    if not URL.verify(request, hmac_key=KEY): redirect(URL('browse'))
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
+
+    # Redirect if there was no add_check to verify that the user add at this time
+    if not session.allow_add == request.args(0,cast=int):
+        redirect(URL('browse'))
+    else:
+        session.allow_add = None
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
