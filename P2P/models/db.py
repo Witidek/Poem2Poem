@@ -105,7 +105,7 @@ db.define_table('abab',
 db.define_table('acrostic',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('word', 'string', requires = IS_NOT_EMPTY()),
-                Field('line_count', 'integer', default=2, writable=False))
+                Field('line_count', 'integer', default=0, writable=False))
 
 db.define_table('haiku',
                 Field('poem_id', db.poem, readable=False, writable=False),
