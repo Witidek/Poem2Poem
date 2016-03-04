@@ -55,7 +55,7 @@ def poem():
     elif poem.category == 'Acrostic':
         acrostic = db(db.acrostic.poem_id == poem.id).select().first()
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
-        contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)    
+        contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
 
     return locals()
 
@@ -363,6 +363,21 @@ def add():
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing = False)
             redirect(URL('poem', args=poem.id))
+    # Add form for Acrostic
+    elif (poem.category == 'Acrostic'):
+        acrostic = db(db.acrostic.poem_id == poem.id).select().first()
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        # Create SQLFORM for the user to add a single line as a String
+        form = SQLFORM(db.new_line, fields=['line'])
+        form.vars.poem_id = poem.id
+        form.vars.line_number = acrostic.line_count + 1
+
+        form.process(onvalidation = add_acrostic_check)
+        if form.accepted:
+            acrostic.update_record(line_count = acrostic.line_count + 1)
+            mutex = db(db.mutex.poem_id == poem.id).select().first()
+            mutex.update_record(editing = False)
+            redirect(URL('poem', args=poem.id))
     # Add form for Haiku
     elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
         haiku = db(db.haiku.poem_id == poem.id).select().first()
@@ -460,6 +475,12 @@ def add_syllabic_check(form):
         syllables_left = 55 - haiku.syllable_count
     if count_syllables(form.vars.word) > syllables_left:
         form.errors.word = 'Word has too many syllables for this line'
+
+def add_acrostic_check (form):
+    acrostic = db(db.acrostic.poem_id == form.vars.poem_id).select().first()
+    check_acrostic = list(acrostic.word)[acrostic.line_count]
+    if (check_acrostic.lower() != form.vars.line[0][0].lower()):
+        form.errors.line = 'Does not start with the right letter'
 
 @auth.requires_login()
 def specialadd():
