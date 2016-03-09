@@ -99,7 +99,7 @@ db.poem.id.readable = False
 
 db.define_table('abab',
                 Field('poem_id', db.poem, readable=False, writable=False),
-                Field('body', 'text', requires = [IS_MATCH('^\D+\n{1}\D+[^\n]$', error_message = 'Please enter only two lines in the form of "line (ENTER) line"'),IS_LENGTH(100)]),
+                Field('body', 'text', requires = [IS_MATCH('[A-za-z ]+\r\n[A-za-z ]+', error_message = 'Please enter only two lines in the form of "line (ENTER) line"'),IS_LENGTH(100)]),
                 Field('line_count', 'integer', default=2, writable=False))
 
 db.define_table('acrostic',
@@ -138,7 +138,8 @@ db.define_table('permission',
 db.define_table('mutex',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('editing', 'boolean', default=False, readable=False, writable=False),
-                Field('edit_timestamp', 'datetime', readable=False, writable=False))
+                Field('edit_timestamp', 'datetime', readable=False, writable=False),
+                Field('ping_timestamp', 'datetime', readable=False, writable=False))
 
 
 ## after defining tables, uncomment below to enable auditing

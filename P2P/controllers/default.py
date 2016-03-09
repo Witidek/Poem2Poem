@@ -96,7 +96,7 @@ def create():
             db.abab.insert(poem_id = db.poem(id), body = form.vars.body)
 
             # Create new mutex for this poem
-            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now, ping_timestamp = request.now)
             # Create a new insert into permission table if poem was created Private (give owner permission)
             if form.vars.permission == 'Private':
                 db.permission.insert(user_id = auth.user, poem_id = id)
@@ -123,7 +123,7 @@ def create():
             db.haiku.insert(poem_id = id, start_haiku = form.vars.start_haiku, word_count = word_count, syllable_count = syllable_count, body_syllable_count = syllable_count)
 
             # Create new mutex for this poem
-            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now, ping_timestamp = request.now)
 
             # Create a new insert into permission table if poem was created Private (give owner permission)
             if form.vars.permission == 'Private':
@@ -138,7 +138,7 @@ def create():
             db.acrostic.insert(poem_id = db.poem(id), word = form.vars.word)
 
             # Create new mutex for this poem
-            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now)
+            db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now, ping_timestamp = request.now)
             # Create a new insert into permission table if poem was created Private (give owner permission)
             if form.vars.permission == 'Private':
                 db.permission.insert(user_id = auth.user, poem_id = id)
@@ -259,18 +259,25 @@ def add_check():
 
     # Check and redirect if another user is currently trying to add a line for this poem
     if mutex.editing:
-        print 'yes mutex locked'
         edit_timestamp = mutex.edit_timestamp
         minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
-        print minutes_elapsed
-        if minutes_elapsed < 1.0:
-            session.flash = 'A user is currently adding a line!'
-            redirect(URL('poem', args=poem_id))
+        if minutes_elapsed < 5.0:
+            ping_timestamp = mutex.ping_timestamp
+            seconds_elapsed = (datetime.datetime.now() - ping_timestamp).total_seconds()
+            if seconds_elapsed <= 30.0:
+                session.flash = 'A user is currently adding a line!'
+                redirect(URL('poem', args=poem_id))
 
     # Lock mutex and allow user to add to that poem with a session variable
-    mutex.update_record(editing = True, edit_timestamp = request.now)
+    mutex.update_record(editing = True, edit_timestamp = request.now, ping_timestamp = request.now)
     session.allow_add = poem_id
     redirect(URL('add', args=poem_id))
+
+def add_ping():
+    if request.vars.poem_id:
+        poem_id = request.vars.poem_id
+        mutex = db(db.mutex.poem_id == poem_id).select().first()
+        mutex.update_record(ping_timestamp = request.now)
 
 def unlocked_mutex():
     print 'trying to unlock...'

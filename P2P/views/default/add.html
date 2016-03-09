@@ -130,20 +130,21 @@
 {{pass}}
 
 <script language="JavaScript">
+    setTimeout(pingServer, 5000);
     setTimeout(function(){
         alert("5 minutes have passed. You will be redirected back to this poem.");
         window.location.href='{{=URL('poem', args=poem.id)}}';
     }, 300000);
 
-    $(window).on('beforeunload', function ()
-    {
-        //this will work only for Chrome
-        ajax('{{=URL('unlock_mutex', args=poem.id)}}',['quit'],'target');
-    });
-
-    $(window).on("unload", function ()
-    {
-        //this will work for other browsers
-        ajax('{{=URL('unlock_mutex', args=poem.id)}}',['quit'],'target');
-    });
+    function pingServer() {
+        jQuery.ajax({
+            type: "GET",
+            url: '{{=URL('add_ping')}}',
+            data: {
+                    poem_id: {{=poem.id}}
+                },//data sent to server
+            dataType: 'json'
+            });
+        setTimeout(pingServer, 5000);
+    }
 </script>
