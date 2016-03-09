@@ -1,6 +1,30 @@
 {{extend 'layout.html'}}
 <input type=button style = "position:relative;" align = "left" onClick="location.href='{{=URL('browse')}}'" value ='Go back to Browse Poems'>
-
+{{voteFunny = 0}}
+{{voteInteresting = 0}}
+{{voteCool = 0}}
+{{votedFunny = False}}
+{{votedInteresting = False}}
+{{votedCool = False}}
+{{for rates in rating:}}
+    {{voteFunny += rates.voteFunny}}
+    {{voteInteresting += rates.voteInteresting}}
+    {{voteCool += rates.voteCool}}
+    {{if (rates.author == auth.user.id) and (rates.voteFunny == 1):}}
+        {{votedFunny = True}}
+    {{pass}}
+    {{if (rates.author == auth.user.id) and (rates.voteInteresting == 1):}}
+        {{votedInteresting = True}}
+    {{pass}}
+    {{if (rates.author == auth.user.id) and (rates.voteCool == 1):}}
+        {{votedCool = True}}
+    {{pass}}
+{{pass}}
+<h5>
+    Votes for Funny : {{=voteFunny}}</br>
+Votes for Interesting : {{=voteInteresting}}</br>
+Vote for Cool: {{=voteCool}}
+</h5>
 <h1 align = "center"><i>{{=poem.title}}</i></h1>
 </br>
 
@@ -31,7 +55,7 @@
 {{elif poem.category == 'Acrostic':}}
 <h3>The Word: {{=acrostic.word}}</h3>
 <center>
-    <div style="width:750px;overflow:auto" class = "center"><pre><font size = "5"><div class = "left">{{for line in lines:}}{{=line.line.title()}}</br>{{pass}}</div></font></pre></div></center>
+    <div style="width:750px;overflow:auto" class = "center"><pre><font size = "5"><div class = "left">{{for line in lines:}}{{=line.line[0].capitalize()}}{{for i in range(1,len(line.line)):}}<font size = "3">{{=line.line[i]}}</font>{{pass}}</br>{{pass}}</div></font></pre></div></center>
 {{pass}}
 <center>
 <h4>
@@ -61,6 +85,11 @@
 </br>
 
 </center>
+    <h4>Vote if you think the poem is Funny, Interesting, or Cool or even all here:</h4></br>
+    {{if votedFunny == False:}} <input type=image style = "position:relative;" onClick="window.location='{{=URL('default','upVoteFunny',args=poem.id)}}'" src = "/P2P/static/images/funnyblue.png/" width = "100px" heigth = "100px" value ='UpVote for Funny'> {{else:}}<input type=image style = "position:relative;" onClick="window.location='{{=URL('default','unVoteFunny',args=poem.id)}}'" src = "/P2P/static/images/funnygreen.png/" width = "100px" heigth = "100px" value ='UpVote for Funny'> {{pass}}
+    {{if votedInteresting == False:}}<input type=image style = "position:relative;" onClick="window.location='{{=URL('default','upVoteInteresting',args=poem.id)}}'" src = "/P2P/static/images/interestingblue.png/" width = "100px" heigth = "100px" value ='UpVote for Interesting'>{{else:}}<input type=image style = "position:relative;" onClick="window.location='{{=URL('default','unVoteInteresting',args=poem.id)}}'" src = "/P2P/static/images/interestinggreen.png/" width = "100px" heigth = "100px" value ='UpVote for Funny'>{{pass}}
+ {{if votedCool == False:}}<input type=image style = "position:relative;" onClick="window.location='{{=URL('default','upVoteCool',args=poem.id)}}'" src = "/P2P/static/images/coolblue.png/" width = "100px" heigth = "100px" value ='UpVote for Cool'>{{else:}}<input type=image style = "position:relative;" onClick="window.location='{{=URL('default','unVoteCool',args=poem.id)}}'" src = "/P2P/static/images/coolgreen.png/" width = "100px" heigth = "100px" value ='UpVote for Funny'>{{pass}}
+{{pass}}
 <script>
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();
