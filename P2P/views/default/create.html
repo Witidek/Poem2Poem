@@ -7,12 +7,66 @@ textarea {
 }
 input { width:50px; }
 </style>
-
 <h4>
-   To get started: </br> 
-   1. Enter a Title </br> 
+{{if request.args(0) == 'abab':}}
+    An <b>ABAB poem</b> form follows:</br>
+    A-B-A-B, C-D-C-D...</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
+
+{{elif request.args(0) == 'aabb':}}
+    An <b>AABB poem</b> form follows:</br>
+    A-A-B-B, C-C-D-D...</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
+
+{{elif request.args(0) == 'aaaa':}}
+    An <b>AAAA poem</b> form follows:</br>
+    A-A-A-A, A-A-A-A...</br>
+    Every Line Rhymes with the previous lines</br>
+
+{{elif request.args(0) == 'sonnet':}}
+    An <b>Sonnet poem</b> form follows:</br>
+    A-B-A-B, C-D-C-D, E-F-E-F, G-G.</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
+
+{{elif request.args(0) == 'haiku':}}
+    An <b>Haiku poem</b> is a three poem form. The form follows:</br>
+    First Line:  5 Syllables</br>
+    Second Line: 7 Syllables</br>
+    Third Line:  5 Syllables</br>
+
+{{elif request.args(0) == 'syllabic':}}
+    An <b>Syllabic poem</b> is poem form where each line is the syllable count:</br>
+    First Line:  1 Syllables</br>
+    Second Line: 2 Syllables</br>
+    Third Line:  3 Syllables</br>
+    And so on...</br>
+
+{{elif request.args(0) == 'acrostic':}}
+    An <b>Acrostic Poem</b> is a poem form where people use a preset word and create poems</br>
+    using the letters of the preset word to as the first letter of their line.</br></br>
+    Example Word: <b>Word</b></br></br>
+                 <b>W</b>hat it is<br>
+                 <b>O</b>r it is anything<br>
+                 <b>R</b>ight it is nothing<br>
+                 <b>D</b>on't forget<br>
+{{elif request.args == 'limerick':}}
+    A <b>Limerick poem</b> form follows:</br>
+        A-A-B-B-A</br>
+        Where A rhymes with A and B rhymes with B</br>
+{{pass}}
+</h4>
+<h4>
+   To get started: </br>
+   1. Enter a Title </br>
    2. Enter a quick description about your poem </br>
-   3. Enter the first two lines of your poem.(Note: You have enter exactly 2 lines. No more no less)</br>
+   {{if (request.args(0) == 'haiku'):}}
+        3. Enter up to 5 Syllables</br>
+   {{elif (request.args(0) == 'syllabic'):}}
+        3. Enter a 1 Syllable Word</br>
+   {{elif request.args(0) == 'acrostic':}}
+        3. Enter a word</br>
+   {{else:}}
+   3. Enter the first two lines of your poem.(Note: You have enter exactly 2 lines. No more no less)</br>{{pass}}
    4. Choose if its Public which means anyone can edit your poem or Private where only you and people you allow can edit your poem.</br>
    5. Submit!
 
