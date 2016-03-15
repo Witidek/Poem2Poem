@@ -97,10 +97,18 @@ db.define_table('poem',
                 Field('permission',requires = IS_IN_SET(['Public','Private']),default = 'Public' ))
 db.poem.id.readable = False
 
+db.define_table('rating',
+                 Field('poem_id', db.poem, readable=False, writable=False),
+                 Field('author', db.auth_user, default=auth.user_id, readable=False, writable=False),
+                 Field('voteFunny', 'integer', default = 0),
+                 Field('voteInteresting', 'integer', default = 0),
+                 Field('voteCool', 'integer', default = 0))
+
 db.define_table('abab',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('body', 'text', requires = [IS_MATCH('[A-za-z ]+\r\n[A-za-z ]+', error_message = 'Please enter only two lines in the form of "line (ENTER) line"'),IS_LENGTH(100)]),
-                Field('line_count', 'integer', default=2, writable=False))
+                Field('line_count', 'integer', default=2, writable=False),
+                Field('temp', 'integer'))
 
 db.define_table('acrostic',
                 Field('poem_id', db.poem, readable=False, writable=False),
@@ -138,8 +146,9 @@ db.define_table('permission',
 db.define_table('mutex',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('editing', 'boolean', default=False, readable=False, writable=False),
-                Field('edit_timestamp', 'datetime', readable=False, writable=False))
+                Field('edit_timestamp', 'datetime', readable=False, writable=False),
+                Field('ping_timestamp', 'datetime', readable=False, writable=False))
 
 
 ## after defining tables, uncomment below to enable auditing
-# auth.enable_record_versioning(db)
+#auth.enable_record_versioning(db)
