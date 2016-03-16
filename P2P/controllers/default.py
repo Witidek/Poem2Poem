@@ -17,14 +17,24 @@ def user():
 
 def browse():
     import math
-    if request.args(0) == None : redirect(URL('browse',args = 0))
+
+    # Auto redirect to page 0 of table
+    if request.args(0) == None:
+        redirect(URL('browse',args = 0))
+
+    # Calculate total number of pages
     row = db(db.poem).select()
     row_len = float(len(row))
     page_num = int(math.ceil(row_len / 15))
-    if len(request.args): page=int(request.args[0])
-    else: page=0
-    items_per_page=15
-    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    if len(request.args):
+        page = int(request.args[0])
+    else:
+        page = 0
+
+    # Items displayed per page
+    items_per_page = 15
+
+    limitby = (page*items_per_page,(page+1)*items_per_page+1)
     rows=db().select(db.poem.ALL,limitby=limitby)
     return locals()
 
@@ -32,6 +42,8 @@ def search():
     rows = db(db.poem).select()
     searchKey = ""
     searchType = 'Poems'
+
+    # Search form
     form = FORM('Search: ',
               INPUT(_name='search'),
               '    Search By:  ',
@@ -66,6 +78,7 @@ def poem():
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
 
+    # Form for adding contributors for a private poem
     forms = FORM('Username: ',
               INPUT(_name='username'),
               INPUT(_type='submit'))
@@ -87,7 +100,9 @@ def poem():
 def delete_poem():
     poem_id = request.args(0,cast=int)
     poem = db.poem(poem_id)
-    if(poem.author == auth.user.id): poem.delete_record()
+    # Check if user is author of this poem
+    if(poem.author == auth.user.id):
+        poem.delete_record()
     redirect(URL('browse',args = 0))
     return locals()
 
@@ -211,10 +226,11 @@ def create():
         redirect(URL('browse'))
     return locals()
 
-def create_haiku_check (form):
-
+def create_haiku_check(form):
+    # Split line into words
     word_list = str(form.vars.start_haiku).split(' ')
-    word_count = len(word_list)
+
+    # Count syllables
     syllable_count = 0
     for word in word_list:
         syllable_count += count_syllables(word)
@@ -222,13 +238,23 @@ def create_haiku_check (form):
             form.errors.start_haiku = 'Too many Syllables (5 Max)'
 
 def create_syllabic_check (form):
+    # Split line into words
     word_list = str(form.vars.start_haiku).split(' ')
-    word_count = len(word_list)
+
+    # Count syllables
     syllable_count = 0
     for word in word_list:
         syllable_count += count_syllables(word)
         if syllable_count > 1:
             form.errors.start_haiku = 'Too many Syllables (1 Max)'
+
+# See below for info about edit
+def edit():
+    redirect(URL('index'))
+
+"""
+# edit() deprecated, replaced with poem owners just being allowed to add permissions to edit if private, and also
+# poem owners can delete their own poems entirely
 
 @auth.requires_login()
 def edit():
@@ -277,7 +303,8 @@ def edit():
             words_form.append(delete_word_form)
             word_form.append(word.word)
 
-    if form.accepted: redirect(URL('browse'))
+    if form.accepted:
+        redirect(URL('browse'))
 
     forms = FORM('Username: ',
               INPUT(_name='username'),
@@ -295,6 +322,7 @@ def edit():
                     db.permission.insert(user_id = users.id , poem_id = poem.id)
                     response.flash = 'Added'
     return locals()
+"""
 
 def delete_line(form):
     print 'deleting' + form.vars.line_id
@@ -346,21 +374,10 @@ def add_ping():
         mutex.update_record(ping_timestamp = request.now)
 
 def unlocked_mutex():
-    print 'trying to unlock...'
+    # Unlock a mutex using argument as poem id
     if not request.args(0): redirect(URL('browse'))
     poem_id = request.args(0,cast=int)
     mutex = db(db.mutex.poem_id == poem_id).select().first()
-    if request.vars.quit:
-        mutex.update_record(editing = False)
-        print 'unlocked mutex?'
-
-def add_help():
-    allow_add = db.auth_user(auth.user.id).allow_add
-    if allow_add:
-        db.auth_user(auth.user.id).update_record(allow_add = False)
-        return True
-    else:
-        return False
 
 @auth.requires_login()
 def add():
@@ -373,6 +390,7 @@ def add():
         print 'redirect no args'
         redirect(URL('browse'))
 
+    # Check that allow_add is valid for this user, meaning they passed add_check() validation
     poem_id = request.args(0,cast=int)
     allow_add = db.auth_user(auth.user.id).allow_add
     if allow_add > 0:
@@ -525,6 +543,7 @@ def add():
 def add_haiku_check(form):
     haiku = db(db.haiku.poem_id == form.vars.poem_id).select().first()
 
+    # Calculate how many syllables left in current line for haiku
     syllables_left = 0
     if haiku.syllable_count < 5:
         syllables_left = 5 - haiku.syllable_count
@@ -533,12 +552,14 @@ def add_haiku_check(form):
     elif 11 < haiku.syllable_count:
         syllables_left = 17 - haiku.syllable_count
 
+    # Error if word that user input has too many syllables
     if count_syllables(form.vars.word) > syllables_left:
         form.errors.word = 'Word has too many syllables for this line'
 
 def add_syllabic_check(form):
     haiku = db(db.haiku.poem_id == form.vars.poem_id).select().first()
 
+    # Calculate how many syllables left in current line for syllablic
     syllables_left = 0
     if haiku.syllable_count < 3:
         syllables_left = 3 - haiku.syllable_count
@@ -558,6 +579,8 @@ def add_syllabic_check(form):
         syllables_left = 45 - haiku.syllable_count
     elif 44 < haiku.syllable_count:
         syllables_left = 55 - haiku.syllable_count
+
+    # Error if word that user input has too many syllables
     if count_syllables(form.vars.word) > syllables_left:
         form.errors.word = 'Word has too many syllables for this line'
 
@@ -566,6 +589,12 @@ def add_acrostic_check (form):
     check_acrostic = list(acrostic.word)[acrostic.line_count]
     if (check_acrostic.lower() != form.vars.line[0][0].lower()):
         form.errors.line = 'Does not start with the right letter'
+
+def specialadd():
+    redirect(URL('index'))
+
+"""
+# specialadd() deprecated along with edit()
 
 @auth.requires_login()
 def specialadd():
@@ -677,6 +706,7 @@ def specialadd():
                 update.update_record(author = auth.user.id)
                 redirect(URL('poem', args=poem.id))
     return locals()
+"""
 
 def pick():
     return locals()

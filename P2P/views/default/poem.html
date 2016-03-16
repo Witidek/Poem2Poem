@@ -87,7 +87,7 @@
 <h4 align = "center">
    {{=forms}}
 </h4>
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('delete_poem',args=poem.id)}}'" value ='Delete Poem'>
+<input type=button id=delete_poem style = "position:relative;" value ='Delete Poem'>
 {{pass}}
 </br></br>
 
@@ -108,6 +108,11 @@ Vote for Cool: {{=voteCool}}
 <script>
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();
+    $('#delete_poem').click(function() {
+    if (confirm('Are you sure?')) {
+        window.location.href='{{=URL('browse')}}';
+    }
+  });
 });
 </script>
 {{pass}}

@@ -69,10 +69,10 @@
 <div style="width:500px;overflow:auto"><p>{{=poem.description}}</p></div>
 
 {{ if (poem.category == '16 line ABAB rhyme' and 16 > abab.line_count) or (poem.category == '16 line AABB rhyme'and 16 > abab.line_count) or (poem.category == 'Sonnet' and 14 > abab.line_count) or (poem.category == 'Limerick' and 5 > abab.line_count) or (poem.category == 'AAAA' and 8 > abab.line_count) or (poem.category == 'Acrostic' and len(list(acrostic.word)) > acrostic.line_count) :}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
 {{pass}}
 {{ if (poem.category == 'Haiku' and 17 > haiku.syllable_count) or (poem.category == "10 line Syllabic Verse" and 55 > haiku.syllable_count):}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add word to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add word to poem'>
 {{pass}}
 
 {{if (auth.user_id == poem.author) and  (poem.permission == 'Private'):}}
@@ -87,17 +87,17 @@
 <h4 align = "center">
    {{=forms}}
 </h4>
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('delete_poem',args=poem.id)}}'" value ='Delete Poem'>
+<input type=button style = "position:relative;" id=delete_poem value ='Delete Poem'>
 {{pass}}
 </br></br>
 
 </br>
 </center>
-<h3>
+<h4>
     Votes for Funny : {{=voteFunny}}</br>
 Votes for Interesting : {{=voteInteresting}}</br>
 Vote for Cool: {{=voteCool}}
-</h3>
+</h4>
 {{if poem.author != auth.user_id:}}
 
     <h4>Vote if you think the poem is Funny, Interesting, or Cool or even all here:</h4></br>
@@ -108,6 +108,12 @@ Vote for Cool: {{=voteCool}}
 <script>
 $(document).ready(function(){
     $('[data-toggle="tooltip"]').tooltip();
+    $('#delete_poem').click(function() {
+    if (confirm('Are you sure?')) {
+      var url = {{=URL('delete_poem',args=poem.id)}};
+      $('#content').load(url);
+    }
+  });
 });
 </script>
 {{pass}}
