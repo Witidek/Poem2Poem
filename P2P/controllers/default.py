@@ -13,6 +13,8 @@ def index():
     return locals()
 
 def user():
+    if request.args(0) == 'profile':
+        redirect(URL('profile'))
     return dict(form=auth())
 
 def browse():
@@ -227,6 +229,13 @@ def create():
     return locals()
 
 def create_haiku_check(form):
+    import re
+    # Check that user only uses english letters
+    REGEX = re.compile('^[A-Za-z ]+$')
+    match = REGEX.match(form.vars.start_haiku)
+    if not match:
+        form.errors.start_haiku = 'Please enter words totaling up to 5 syllables using only english alphabet and spaces'
+
     # Split line into words
     word_list = str(form.vars.start_haiku).split(' ')
 
@@ -238,6 +247,13 @@ def create_haiku_check(form):
             form.errors.start_haiku = 'Too many Syllables (5 Max)'
 
 def create_syllabic_check (form):
+    import re
+    # Check that user only uses english letters
+    REGEX = re.compile('^[A-Za-z]+$')
+    match = REGEX.match(form.vars.start_haiku)
+    if not match:
+        form.errors.start_haiku = 'Please enter a single syllable word using only english alphabet'
+
     # Split line into words
     word_list = str(form.vars.start_haiku).split(' ')
 
@@ -365,7 +381,7 @@ def add_check():
     # Lock mutex and allow user to add to that poem with a session variable
     mutex.update_record(editing = True, edit_timestamp = request.now, ping_timestamp = request.now)
     db.auth_user(auth.user.id).update_record(allow_add = 2)
-    redirect(URL('add', args=poem_id))
+    redirect(URL('add', args=poem_id, user_signature=True))
 
 def add_ping():
     if request.vars.poem_id:
@@ -387,7 +403,6 @@ def add():
 
     # Redirect to poem browser if no argument for poem id
     if not request.args(0):
-        print 'redirect no args'
         redirect(URL('browse'))
 
     # Check that allow_add is valid for this user, meaning they passed add_check() validation
@@ -466,6 +481,9 @@ def add():
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing = False)
             redirect(URL('poem', args=poem.id))
+        elif form.errors:
+            allow_add = db.auth_user(auth.user.id).allow_add + 1
+            db.auth_user(auth.user.id).update_record(allow_add = allow_add)
     # Add form for Acrostic
     elif (poem.category == 'Acrostic'):
         acrostic = db(db.acrostic.poem_id == poem.id).select().first()
@@ -481,6 +499,9 @@ def add():
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing = False)
             redirect(URL('poem', args=poem.id))
+        elif form.errors:
+            allow_add = db.auth_user(auth.user.id).allow_add + 1
+            db.auth_user(auth.user.id).update_record(allow_add = allow_add)
     # Add form for Haiku
     elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse'):
         haiku = db(db.haiku.poem_id == poem.id).select().first()
@@ -537,6 +558,9 @@ def add():
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing=False)
             redirect(URL('poem', args=poem.id))
+        elif form.errors:
+            allow_add = db.auth_user(auth.user.id).allow_add + 1
+            db.auth_user(auth.user.id).update_record(allow_add = allow_add)
 
     return locals()
 

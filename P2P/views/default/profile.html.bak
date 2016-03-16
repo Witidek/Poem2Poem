@@ -1,4 +1,33 @@
 {{extend 'layout.html'}}
+
+<head>
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table tr:nth-child(even) {
+    background-color: #ccffff;
+    color: black;
+}
+table tr:nth-child(odd) {
+   background-color:#fff;
+    color: black;
+}
+table th	{
+    background-color: #00284d;
+    color: white;
+}
+</style>
+</head>
+
 <h1>
 Username: {{=user.username}}
 </h1>
@@ -41,7 +70,7 @@ Username: {{=user.username}}
         <tr>
             <td><a href="{{=URL('poem',args=row.poem.id)}}"> {{=row.poem.title}}</td>
             <td> {{=row.poem.date_posted}}</td>
-            <td>{{=row.category}}</td>
+            <td>{{=row.poem.category}}</td>
         </tr>
         {{pass}}
 </table>

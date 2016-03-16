@@ -48,7 +48,7 @@ textarea {
                  <b>O</b>r it is anything<br>
                  <b>R</b>ight it is nothing<br>
                  <b>D</b>on't forget<br>
-{{elif request.args == 'limerick':}}
+{{elif request.args(0) == 'limerick':}}
     A <b>Limerick poem</b> form follows:</br>
         A-A-B-B-A</br>
         Where A rhymes with A and B rhymes with B</br>
