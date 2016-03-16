@@ -305,7 +305,7 @@ def add_check():
 
     # Lock mutex and allow user to add to that poem with a session variable
     mutex.update_record(editing = True, edit_timestamp = request.now, ping_timestamp = request.now)
-    session.allow_add = poem_id
+    db.auth_user(auth.user.id).update_record(allow_add = 2)
     redirect(URL('add', args=poem_id))
 
 def add_ping():
@@ -323,6 +323,14 @@ def unlocked_mutex():
         mutex.update_record(editing = False)
         print 'unlocked mutex?'
 
+def add_help():
+    allow_add = db.auth_user(auth.user.id).allow_add
+    if allow_add:
+        db.auth_user(auth.user.id).update_record(allow_add = False)
+        return True
+    else:
+        return False
+
 @auth.requires_login()
 def add():
     import urllib
@@ -330,13 +338,17 @@ def add():
     from gluon.contrib import simplejson
 
     # Redirect to poem browser if no argument for poem id
-    if not request.args(0): redirect(URL('browse'))
-
-    # Redirect if there was no add_check to verify that the user add at this time
-    if not session.allow_add == request.args(0,cast=int):
+    if not request.args(0):
+        print 'redirect no args'
         redirect(URL('browse'))
+
+    poem_id = request.args(0,cast=int)
+    allow_add = db.auth_user(auth.user.id).allow_add
+    if allow_add > 0:
+        allow_add -= 1
+        db.auth_user(auth.user.id).update_record(allow_add = allow_add)
     else:
-        session.allow_add = None
+        redirect(URL('browse'))
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
@@ -421,7 +433,7 @@ def add():
             mutex.update_record(editing = False)
             redirect(URL('poem', args=poem.id))
     # Add form for Haiku
-    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
+    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse'):
         haiku = db(db.haiku.poem_id == poem.id).select().first()
         words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
         form = SQLFORM(db.new_word, fields=['word'])

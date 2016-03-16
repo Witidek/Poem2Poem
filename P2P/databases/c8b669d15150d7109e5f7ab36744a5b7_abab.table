@@ -22,7 +22,7 @@ sS'type'
 p10
 S'text'
 p11
-ssS'line_count'
+ssS'poem_id'
 p12
 (dp13
 g4
@@ -30,14 +30,14 @@ I512
 sg5
 I00
 sg6
-I4
+I2
 sg7
-S'INTEGER'
+S'INTEGER REFERENCES poem (id) ON DELETE CASCADE  '
 p14
 sg9
 I00
 sg10
-S'integer'
+S'reference poem'
 p15
 ssS'beginning1'
 p16
@@ -77,24 +77,24 @@ p28
 sg9
 I00
 sg10
-g15
-ssS'poem_id'
+S'integer'
 p29
-(dp30
+ssS'line_count'
+p30
+(dp31
 g4
 I512
 sg5
 I00
 sg6
-I2
+I4
 sg7
-S'INTEGER REFERENCES poem (id) ON DELETE CASCADE  '
-p31
+S'INTEGER'
+p32
 sg9
 I00
 sg10
-S'reference poem'
-p32
+g29
 ssS'beginning'
 p33
 (dp34

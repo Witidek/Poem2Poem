@@ -58,7 +58,10 @@ service = Service()
 plugins = PluginManager()
 
 ## create all tables needed by auth if not custom tables
+auth.settings.extra_fields['auth_user']= [ Field('allow_add', 'integer') ]
 auth.define_tables(username=True, signature=False)
+
+
 
 ## configure email
 mail = auth.settings.mailer
@@ -108,7 +111,7 @@ db.define_table('abab',
                 Field('poem_id', db.poem, readable=False, writable=False),
                 Field('body', 'text', requires = [IS_MATCH('[A-za-z ]+\r\n[A-za-z ]+', error_message = 'Please enter only two lines in the form of "line (ENTER) line"'),IS_LENGTH(100)]),
                 Field('line_count', 'integer', default=2, writable=False),
-                Field('temp', 'integer'))
+                Field('tempnhyu', 'integer'))
 
 db.define_table('acrostic',
                 Field('poem_id', db.poem, readable=False, writable=False),

@@ -134,7 +134,7 @@
     setTimeout(function(){
         alert("5 minutes have passed. You will be redirected back to this poem.");
         window.location.href='{{=URL('poem', args=poem.id)}}';
-    }, 3000);
+    }, 300000);
 
     function pingServer() {
         jQuery.ajax({

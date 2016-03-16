@@ -34,14 +34,14 @@ def search():
         searchType = form.vars.searchType
 
     return locals()
-
+@auth.requires_login()
 def poem():
     # Redirect to poem browser if no argument for poem id
     if not request.args(0): redirect(URL('browse'))
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
-
+    rating = db(db.rating.poem_id == poem.id).select()
     # Displaying ABAB
     if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
         abab = db(db.abab.poem_id == poem.id).select().first()
@@ -56,7 +56,6 @@ def poem():
         acrostic = db(db.acrostic.poem_id == poem.id).select().first()
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
-
     return locals()
 
 def count_syllables(str):
@@ -78,6 +77,42 @@ def count_syllables(str):
     # Return number of syllables cast as int
     return int(parsed_json['syllables'])
 
+def upVoteFunny():
+    poem = db.poem(request.args(0,cast=int))
+    db.rating.insert(poem_id = poem.id, voteFunny = 1)
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
+def unVoteFunny():
+    poem = db.poem(request.args(0,cast=int))
+    db((db.rating.author == auth.user) and (db.rating.poem_id == poem.id) and (db.rating.voteFunny == 1)).delete()
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
+def upVoteInteresting():
+    poem = db.poem(request.args(0,cast=int))
+    db.rating.insert(poem_id = poem.id, voteInteresting = 1)
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
+def unVoteInteresting():
+    poem = db.poem(request.args(0,cast=int))
+    db((db.rating.author == auth.user) and (db.rating.poem_id == poem.id) and (db.rating.voteInteresting == 1)).delete()
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
+def upVoteCool():
+    poem = db.poem(request.args(0,cast=int))
+    db.rating.insert(poem_id = poem.id, voteCool = 1)
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
+def unVoteCool():
+    poem = db.poem(request.args(0,cast=int))
+    db((db.rating.author == auth.user) and (db.rating.poem_id == poem.id) and (db.rating.voteCool == 1)).delete()
+    redirect(URL('poem',args = [request.args(0)]))
+    return locals()
+
 @auth.requires_login()
 def create():
     # Redirect to poem browser if no argument for poem type
@@ -94,7 +129,6 @@ def create():
             # Do an insert if ABAB
             id = db.poem.insert(**db.poem._filter_fields(form.vars))
             db.abab.insert(poem_id = db.poem(id), body = form.vars.body)
-
             # Create new mutex for this poem
             db.mutex.insert(poem_id = id, editing = False, edit_timestamp = request.now, ping_timestamp = request.now)
             # Create a new insert into permission table if poem was created Private (give owner permission)
@@ -104,13 +138,13 @@ def create():
     # Create form for haiku
     elif (request.args(0) == 'haiku') or (request.args(0) == 'syllabic'):
         if request.args(0) == 'haiku':
-            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_haiku_check)
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission'],labels = {'start_haiku':'Starting Words'}).process(onvalidation = create_haiku_check)
             form.vars.category = 'Haiku'
     #########################################
     #REMEMBER TO CHANGE THE START HAIKU TEXT
     #########################################
         elif request.args(0) == 'syllabic':
-            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission']).process(onvalidation = create_syllabic_check)
+            form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission'],labels = {'start_haiku':'Starting Word'}).process(onvalidation = create_syllabic_check)
             form.vars.category = '10 line Syllabic Verse'
         if form.accepted:
             word_list = str(form.vars.start_haiku).split(' ')
@@ -165,6 +199,7 @@ def create_syllabic_check (form):
         syllable_count += count_syllables(word)
         if syllable_count > 1:
             form.errors.start_haiku = 'Too many Syllables (1 Max)'
+
 @auth.requires_login()
 def edit():
     # Redirect to poem browser if no argument for poem id
@@ -259,10 +294,8 @@ def add_check():
 
     # Check and redirect if another user is currently trying to add a line for this poem
     if mutex.editing:
-        print 'yes mutex locked'
         edit_timestamp = mutex.edit_timestamp
         minutes_elapsed = (datetime.datetime.now() - edit_timestamp).total_seconds() / 60
-        print minutes_elapsed
         if minutes_elapsed < 5.0:
             ping_timestamp = mutex.ping_timestamp
             seconds_elapsed = (datetime.datetime.now() - ping_timestamp).total_seconds()
@@ -272,12 +305,11 @@ def add_check():
 
     # Lock mutex and allow user to add to that poem with a session variable
     mutex.update_record(editing = True, edit_timestamp = request.now, ping_timestamp = request.now)
-    session.allow_add = poem_id
+    db.auth_user(auth.user.id).update_record(allow_add = 2)
     redirect(URL('add', args=poem_id))
 
 def add_ping():
     if request.vars.poem_id:
-        print 'found ajax request'
         poem_id = request.vars.poem_id
         mutex = db(db.mutex.poem_id == poem_id).select().first()
         mutex.update_record(ping_timestamp = request.now)
@@ -291,6 +323,14 @@ def unlocked_mutex():
         mutex.update_record(editing = False)
         print 'unlocked mutex?'
 
+def add_help():
+    allow_add = db.auth_user(auth.user.id).allow_add
+    if allow_add:
+        db.auth_user(auth.user.id).update_record(allow_add = False)
+        return True
+    else:
+        return False
+
 @auth.requires_login()
 def add():
     import urllib
@@ -298,13 +338,17 @@ def add():
     from gluon.contrib import simplejson
 
     # Redirect to poem browser if no argument for poem id
-    if not request.args(0): redirect(URL('browse'))
-
-    # Redirect if there was no add_check to verify that the user add at this time
-    if not session.allow_add == request.args(0,cast=int):
+    if not request.args(0):
+        print 'redirect no args'
         redirect(URL('browse'))
+
+    poem_id = request.args(0,cast=int)
+    allow_add = db.auth_user(auth.user.id).allow_add
+    if allow_add > 0:
+        allow_add -= 1
+        db.auth_user(auth.user.id).update_record(allow_add = allow_add)
     else:
-        session.allow_add = None
+        redirect(URL('browse'))
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
@@ -363,15 +407,20 @@ def add():
             sorted_syllables[syllable_count].append(word)
 
         # Create SQLFORM for the user to add a single line as a String
-        form = SQLFORM(db.new_line, fields=['line'])
+        form=FORM('Line',
+              INPUT(_name='line', requires=IS_NOT_EMPTY()),
+              INPUT(_type='submit'))
         form.vars.poem_id = poem.id
         form.vars.line_number = abab.line_count + 1
 
         form.process()
         if form.accepted:
+            print 'form accepted'
+            db.new_line.insert(poem_id = poem.id, author = auth.user, line_number = abab.line_count + 1, line = form.vars.line)
             abab.update_record(line_count = abab.line_count + 1)
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing = False)
+            print 'poem'
             redirect(URL('poem', args=poem.id))
     # Add form for Acrostic
     elif (poem.category == 'Acrostic'):
@@ -387,9 +436,10 @@ def add():
             acrostic.update_record(line_count = acrostic.line_count + 1)
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing = False)
+            print 'poem'
             redirect(URL('poem', args=poem.id))
     # Add form for Haiku
-    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse') :
+    elif(poem.category == 'Haiku') or (poem.category == '10 line Syllabic Verse'):
         haiku = db(db.haiku.poem_id == poem.id).select().first()
         words = db(db.new_word.poem_id == poem.id).select(orderby=db.new_word.word_number)
         form = SQLFORM(db.new_word, fields=['word'])
@@ -443,8 +493,10 @@ def add():
             haiku.update_record(word_count = haiku.word_count + 1, syllable_count = haiku.syllable_count + syllable_count)
             mutex = db(db.mutex.poem_id == poem.id).select().first()
             mutex.update_record(editing=False)
+            print 'poem'
             redirect(URL('poem', args=poem.id))
 
+    print 'end..'
     return locals()
 
 def add_haiku_check(form):

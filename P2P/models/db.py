@@ -58,7 +58,10 @@ service = Service()
 plugins = PluginManager()
 
 ## create all tables needed by auth if not custom tables
+auth.settings.extra_fields['auth_user']= [ Field('allow_add', 'integer') ]
 auth.define_tables(username=True, signature=False)
+
+
 
 ## configure email
 mail = auth.settings.mailer

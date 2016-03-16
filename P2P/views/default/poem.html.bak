@@ -71,10 +71,10 @@ Vote for Cool: {{=voteCool}}
 <div style="width:500px;overflow:auto"><p>{{=poem.description}}</p></div>
 
 {{ if (poem.category == '16 line ABAB rhyme' and 16 > abab.line_count) or (poem.category == '16 line AABB rhyme'and 16 > abab.line_count) or (poem.category == 'Sonnet' and 14 > abab.line_count) or (poem.category == 'Limerick' and 5 > abab.line_count) or (poem.category == 'AAAA' and 8 > abab.line_count) or (poem.category == 'Acrostic' and len(list(acrostic.word)) > acrostic.line_count) :}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add line to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add line to poem'>
 {{pass}}
 {{ if (poem.category == 'Haiku' and 17 > haiku.syllable_count) or (poem.category == "10 line Syllabic Verse" and 55 > haiku.syllable_count):}}
-<input type=button style = "position:relative;" onClick="location.href='{{=URL('add_check',args=poem.id)}}'" value ='Add word to poem'>
+<input type=button style = "position:relative;" onClick="location.href='{{=URL('add',args=poem.id)}}'" value ='Add word to poem'>
 {{pass}}
 
 {{if (auth.user_id == poem.author) and  (poem.permission == 'Private'):}}
