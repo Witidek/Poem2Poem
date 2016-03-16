@@ -57,6 +57,22 @@ table#t01 th	{
     </tbody>
 </table>
 
+<h4 align="right" >
+    {{if page:}}
+    <a href="{{=URL(args=[page-1])}}">previous</a>
+    {{pass}}
+    {{for i in range(0,page_num):}}
+        {{ if i == int(request.args(0)):}}
+    <b><font color="black">{{=i+1}}</font></b>
+    {{else:}}
+        <a href="{{=URL(args=[i])}}">{{=i+1}}</a>
+        {{pass}}
+    {{pass}}
+    {{if len(rows)>items_per_page:}}
+    <a href="{{=URL(args=[page+1])}}">next</a>
+    {{pass}}
+</h4>
+
 <input type=button  style = "position:relative;"  onClick="location.href='{{=URL('pick')}}'" value='Create new poem'>
 
 <script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>

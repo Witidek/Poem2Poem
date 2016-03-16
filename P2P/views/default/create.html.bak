@@ -11,12 +11,12 @@ input { width:50px; }
 {{if request.args(0) == 'abab':}}
     An <b>ABAB poem</b> form follows:</br>
     A-B-A-B, C-D-C-D...</br>
-    Where A rhymes with A and B rhymes with B and so on</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
 
 {{elif request.args(0) == 'aabb':}}
     An <b>AABB poem</b> form follows:</br>
     A-A-B-B, C-C-D-D...</br>
-    Where A rhymes with A and B rhymes with B and so on</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
 
 {{elif request.args(0) == 'aaaa':}}
     An <b>AAAA poem</b> form follows:</br>
@@ -26,7 +26,7 @@ input { width:50px; }
 {{elif request.args(0) == 'sonnet':}}
     An <b>Sonnet poem</b> form follows:</br>
     A-B-A-B, C-D-C-D, E-F-E-F, G-G.</br>
-    Where A rhymes with A and B rhymes with B and so on</br>
+    Where A rhymes with A and B rhymes with B and so on...</br>
 
 {{elif request.args(0) == 'haiku':}}
     An <b>Haiku poem</b> is a three poem form. The form follows:</br>

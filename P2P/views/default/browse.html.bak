@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 <h2>Browse Poems</h2>
 <h4 align="right" >
-    <input type=button  onClick="location.href='/P2P/default/search'"   value='Search'>
+    <input type=button  onClick="location.href='{{=URL('search')}}'" value='Search'>
 </h4>
 <h4>
     Here you can see all the poems that have been made by our current user.</br>
@@ -57,7 +57,23 @@ table#t01 th	{
     </tbody>
 </table>
 
-<input type=button  style = "position:relative;"  onClick="location.href='{{URL('pick')}}'" value='Create new poem'>
+<h4 align="right" >
+    {{if page:}}
+    <a href="{{=URL(args=[page-1])}}">previous</a>
+    {{pass}}
+    {{for i in range(0,page_num):}}
+        {{ if i == int(request.args(0)):}}
+    <b><font color="black"><u>{{=i+1}}</u></font></b>
+    {{else:}}
+        <a href="{{=URL(args=[i])}}">{{=i+1}}</a>
+        {{pass}}
+    {{pass}}
+    {{if len(rows)>items_per_page:}}
+    <a href="{{=URL(args=[page+1])}}">next</a>
+    {{pass}}
+</h4>
+
+<input type=button  style = "position:relative;"  onClick="location.href='{{=URL('pick')}}'" value='Create new poem'>
 
 <script type="text/javascript" src="{{=URL('static','js/jquery-latest.js')}}"></script>
 <script type="text/javascript" src="{{=URL('static','js/jquery.tablesorter.js')}}"></script>
