@@ -5,7 +5,8 @@ Username: {{=user.username}}
 <table class = "table" id="owned_table">
     <tr>
         <th>Poems Owned</th>
-        <th>Date Posted</th>
+        <th>Date Updated</th>
+        <th>Poem Type</th>
         <th>Public or Private </th>
         <th>Permissions</th>
 
@@ -15,6 +16,7 @@ Username: {{=user.username}}
             {{str = ''}}
             <td><a href="{{=URL('poem',args=row.id)}}"> {{=row.title}} </td>
             <td> {{=row.date_posted}}</td>
+            <td>{{=row.category}}</td>
             <td> {{=row.permission}}</td>
              {{for permission in db(db.permission).select():}}
                 {{if permission.poem_id == row.id:}}
@@ -33,11 +35,13 @@ Username: {{=user.username}}
     <tr>
         <th>Poems Contributed </th>
         <th>Date Posted</th>
+        <th>Poem Type</th>
     </tr>
         {{for row in poems_contributed:}}
         <tr>
             <td><a href="{{=URL('poem',args=row.poem.id)}}"> {{=row.poem.title}}</td>
             <td> {{=row.poem.date_posted}}</td>
+            <td>{{=row.poem.category}}</td>
         </tr>
         {{pass}}
 </table>

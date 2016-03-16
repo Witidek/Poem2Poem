@@ -16,7 +16,16 @@ def user():
     return dict(form=auth())
 
 def browse():
-    rows = db(db.poem).select()
+    import math
+    if request.args(0) == None : redirect(URL('browse',args = 0))
+    row = db(db.poem).select()
+    row_len = float(len(row))
+    page_num = int(math.ceil(row_len / 15))
+    if len(request.args): page=int(request.args[0])
+    else: page=0
+    items_per_page=15
+    limitby=(page*items_per_page,(page+1)*items_per_page+1)
+    rows=db().select(db.poem.ALL,limitby=limitby)
     return locals()
 
 def search():
@@ -56,6 +65,30 @@ def poem():
         acrostic = db(db.acrostic.poem_id == poem.id).select().first()
         lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         contributors = db(db.new_line.poem_id == poem.id).select(db.new_line.author, groupby=db.new_line.author)
+
+    forms = FORM('Username: ',
+              INPUT(_name='username'),
+              INPUT(_type='submit'))
+    if forms.accepts(request,session):
+        added = False
+        for users in db(db.auth_user).select():
+            if(users.username == forms.vars.username):
+                for permission in db(db.permission).select():
+                    if(permission.user_id == users.id and permission.poem_id == poem.id):
+                        response.flash = 'Already Added'
+                    else:
+                        added = True
+                if(added == True):
+                    db.permission.insert(user_id = users.id , poem_id = poem.id)
+                    response.flash = 'Added'
+    return locals()
+
+@auth.requires_login()
+def delete_poem():
+    poem_id = request.args(0,cast=int)
+    poem = db.poem(poem_id)
+    if(poem.author == auth.user.id): poem.delete_record()
+    redirect(URL('browse',args = 0))
     return locals()
 
 def count_syllables(str):
@@ -140,9 +173,6 @@ def create():
         if request.args(0) == 'haiku':
             form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission'],labels = {'start_haiku':'Starting Words'}).process(onvalidation = create_haiku_check)
             form.vars.category = 'Haiku'
-    #########################################
-    #REMEMBER TO CHANGE THE START HAIKU TEXT
-    #########################################
         elif request.args(0) == 'syllabic':
             form = SQLFORM.factory(db.poem, db.haiku, fields=['title', 'description', 'start_haiku', 'permission'],labels = {'start_haiku':'Starting Word'}).process(onvalidation = create_syllabic_check)
             form.vars.category = '10 line Syllabic Verse'
@@ -248,6 +278,7 @@ def edit():
             word_form.append(word.word)
 
     if form.accepted: redirect(URL('browse'))
+
     forms = FORM('Username: ',
               INPUT(_name='username'),
               INPUT(_type='submit'))
@@ -335,8 +366,6 @@ def add():
     # Redirect if there was no add_check to verify that the user add at this time
     if not session.allow_add == request.args(0,cast=int):
         redirect(URL('browse'))
-    else:
-        session.allow_add = None
 
     # Load poem using the URL argument as poem id
     poem = db.poem(request.args(0,cast=int))
@@ -550,9 +579,9 @@ def specialadd():
             redirect(URL('poem', args=poem.id))
 
     # Add form for ABAB
-    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme'):
+    if (poem.category == '16 line ABAB rhyme') or (poem.category == '16 line AABB rhyme') or (poem.category == 'Sonnet') or (poem.category == 'Limerick') or (poem.category == 'AAAA'):
         abab = db(db.abab.poem_id == poem.id).select().first()
-        rows = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
+        lines = db(db.new_line.poem_id == poem.id).select(orderby=db.new_line.line_number)
         if poem.category == '16 line ABAB rhyme':
             # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
             rhyme_word = ''
@@ -571,6 +600,17 @@ def specialadd():
 
         elif poem.category == '16 line AABB rhyme':
             # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
+            rhyme_word = ''
+            rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+1)).select().first()
+            test = False
+            if (lineNumber % 4 == 0) or (lineNumber % 4 == 2):
+                rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber-1)).select().first()
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+            elif rhyme_line:
+                rhyme_word = rhyme_line.line.split(' ')[-1]
+                test = True
+        elif poem.category == 'Limerick':
+             # Grab last word in the second to last line to rhyme by default (for ABAB rhyme scheme)
             rhyme_word = ''
             rhyme_line = db((db.new_line.poem_id == poem.id) & (db.new_line.line_number == lineNumber+1)).select().first()
             test = False
